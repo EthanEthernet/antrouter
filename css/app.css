@@ -139,7 +139,7 @@ input[type=range]{width:100%;accent-color:var(--signal)}
 .tabbar .tourbtn{margin:0 0 8px;padding:9px 14px;font-size:14px;white-space:nowrap}
 .stage{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
 .side{position:sticky;top:12px;z-index:51}
-@media (max-width:860px){.stage{grid-template-columns:1fr}.side{position:static}}
+@media (max-width:860px){.stage{grid-template-columns:minmax(0,1fr)}.side{position:static}}
 .panel{display:grid;gap:16px}
 .panel[hidden]{display:none}
 .panel .loop{margin-top:0}
