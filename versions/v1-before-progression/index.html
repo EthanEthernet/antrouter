@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AntRouter (previous)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E1424;--rule:#26314D;--ink:#E6EAF2;--muted:#8B96AE;--signal:#F5B82E;--pink:#F59AB0;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#F3EEE8;--rule:#D9CFC4;--ink:#2A2230;--muted:#6E6475}}
+:root[data-theme="light"]{--bg:#F3EEE8;--rule:#D9CFC4;--ink:#2A2230;--muted:#6E6475}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Public Sans",system-ui,sans-serif}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:40px 22px 64px}
+h1{font:800 clamp(38px,6.4vw,68px)/1 "Archivo",Arial,sans-serif;font-variation-settings:"wdth" 118;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:62ch;margin:0 0 28px;font-size:18px}
+.term{background:#0B1120;border:1px solid #26314D;border-radius:16px;overflow:hidden}
+.bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid #26314D}
+.bar i{width:11px;height:11px;border-radius:50%;background:#3A4563;display:block}
+.bar span{margin-left:8px;font:500 12.5px/1 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:#8B96AE}
+pre{margin:0;padding:20px 0 16px;color:#E7D2B4;font-family:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;line-height:1;white-space:pre;overflow:hidden;text-align:center;cursor:crosshair;user-select:none}
+.controls{display:grid;grid-template-columns:1fr auto;gap:18px;margin-top:20px;align-items:start}
+@media (max-width:720px){.controls{grid-template-columns:1fr}}
+.group b{display:block;font:700 15px/1.3 "Archivo",sans-serif;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button{font:600 14px/1 "Public Sans",sans-serif;padding:10px 14px;border-radius:999px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+button:hover{border-color:var(--ink)}
+button .dot{width:10px;height:10px;border-radius:50%}
+button.primary{background:var(--pink);color:#3A1220;border-color:var(--pink)}
+.router{margin-top:20px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.router{grid-template-columns:1fr}}
+.card{border:1px solid var(--rule);border-radius:14px;padding:18px}
+textarea{width:100%;min-height:92px;resize:vertical;font:inherit;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:10px;padding:12px 14px}
+.dials{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0}
+@media (max-width:480px){.dials{grid-template-columns:1fr}}
+.dial label{display:flex;justify-content:space-between;font-weight:600;font-size:14px}
+.dial output{color:var(--muted);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--signal)}
+.go{background:var(--signal);color:#2A1E00;border-color:var(--signal);font:700 15px/1 "Archivo",sans-serif;padding:13px 20px}
+.go:disabled{opacity:.5;cursor:wait}
+.samples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.samples button{font-size:13px;padding:7px 11px}
+.pick h3{font:800 30px/1.1 "Archivo",sans-serif;font-variation-settings:"wdth" 112;margin:4px 0 6px;display:flex;align-items:center;gap:10px}
+.pick .sw{width:16px;height:16px;border-radius:50%}
+.meta{font-size:14px;color:var(--muted)}
+.reason{margin:10px 0 14px;font-size:15.5px}
+.bars{display:grid;gap:7px;margin:12px 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;border:1px solid rgba(127,127,127,.35);font-size:13.5px;cursor:pointer}
+.chip:hover{background:rgba(127,127,127,.12)}
+.chip.on{border-color:var(--c);font-weight:700;box-shadow:0 0 0 1px var(--c) inset}
+.chip .sw{width:9px;height:9px;border-radius:50%;display:inline-block}
+.barrow{display:grid;grid-template-columns:110px 1fr 34px;gap:10px;align-items:center;font-size:13.5px;cursor:pointer;border-radius:6px;padding:2px 4px}
+.barrow:hover{background:rgba(127,127,127,.12)}
+.barrow .track{height:8px;border-radius:4px;background:rgba(127,127,127,.18);overflow:hidden}
+.barrow .fill{display:block;height:100%;border-radius:4px}
+.fam{font:700 12.5px/1 "Public Sans",sans-serif;color:var(--muted);margin-top:6px}
+.open{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.open a{font:700 14px/1 "Archivo",sans-serif;padding:11px 16px;border-radius:999px;text-decoration:none;color:#2A1E00;background:var(--signal)}
+.empty{color:var(--muted);font-size:15px;margin:0}
+.ledger{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px}
+.ledger b{font:750 24px/1 "Archivo",sans-serif;display:block}
+.ledger span{font-size:12.5px;color:var(--muted)}
+.plat{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
+.plat button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.mood{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.states{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:44px;border-top:1px solid var(--rule);padding-top:28px}
+@media (max-width:820px){.states{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.states{grid-template-columns:1fr}}
+.states h3{font:700 18px/1.2 "Archivo",sans-serif;font-variation-settings:"wdth" 108;margin:0 0 6px}
+.states p{margin:0;color:var(--muted);font-size:15px}
+.brief{margin-top:36px;max-width:70ch}
+.brief h2{font:750 28px/1.1 "Archivo",sans-serif;font-variation-settings:"wdth" 112;margin:0 0 12px}
+.brief p{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AntRouter</h1>
+  <p class="sub">Meet Mandu, a small anteater drawn entirely in text characters. Mandu follows ant trails, and in AntRouter every trail leads a prompt to the right model. Type a prompt and Mandu picks the best model, shows why, and learns from your reroutes. Tell Mandu which app you're in and it picks the right tier inside Claude, ChatGPT or Gemini. Fellow Anteaters: try typing <b>zot</b>.</p>
+
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span id="status">mandu — sniffing around</span></div>
+    <pre id="screen" role="img" aria-label="Animated ASCII anteater mascot named Mandu"></pre>
+  </div>
+
+  <div class="router">
+    <div class="card">
+      <div class="plat" id="plat"><span class="meta">Mandu is working in:</span></div>
+      <label for="prompt" style="font-weight:600">Your prompt</label>
+      <textarea id="prompt" placeholder="Ask anything. Mandu will sniff out whether Claude, GPT or Gemini should take it."></textarea>
+      <div class="samples" id="samples"></div>
+      <div class="open"><button class="go" id="go">Route prompt</button><span class="meta" id="engine">Router: Mandu's trail map</span></div>
+      <div class="mood">
+        <button id="zot" style="border-color:#FFD200;color:#FFD200">Zot!</button><button id="pet">Pet Mandu</button><button id="nap">Nap</button><button id="wake">Wake up</button>
+      </div>
+    </div>
+    <div class="card" id="result" aria-live="polite">
+      <p class="empty">Route a prompt and Mandu will follow the trail to the best model among Claude, GPT and Gemini.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <b style="font:700 16px/1.2 Archivo,sans-serif">Your trails</b>
+    <div id="learned" class="meta" style="margin-top:8px"></div>
+  </div>
+
+  <div class="states">
+    <div><h3>Sniffing</h3><p>Gentle bob, swishy tail, wiggly snout, the odd tongue flick. Eyes follow your cursor.</p></div>
+    <div><h3>Following the trail</h3><p>Ants in the model's color march ahead, Mandu trots after them, and the trail sign flips to the destination.</p></div>
+    <div><h3>Found it</h3><p>Happy squint, blushing cheeks, tongue out, a few floating hearts.</p></div>
+    <div><h3>Rerouted and napping</h3><p>A head tilt and a question mark when you overrule it. Left alone, it curls its tail and dozes.</p></div>
+  </div>
+
+  <div class="brief">
+    <h2>Why an anteater</h2>
+    <p>It also helps that AntRouter is built at UC Irvine, where the anteater has been the mascot since the 1960s. Mandu is its own character, but it knows the cheer: type z-o-t anywhere on this page, or press the Zot! button, and it does a little blue-and-gold victory dance.</p>
+    <p>Real ants find the shortest path to food by laying scent trails, and computer scientists turned that into a routing method called ant colony optimization. AntRouter borrows the idea: every prompt leaves a trail, and the trails that lead to good answers get stronger. Mandu is the one who follows them. Its name comes from the tamandua, the anteater's smaller cousin, and its moods map onto the core loop: sniffing while you type, following the trail while AntRouter decides, happy when the answer arrives, puzzled when you steer.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+const MODELS=[
+ {id:'opus',fam:'Claude',name:'Claude Opus',color:'#9B7BEA',q:{code:9.6,reason:9.6,creative:9.5,fact:8.8,summarize:9.2,chat:9.0},speed:4,cost:30,open:'claude'},
+ {id:'sonnet',fam:'Claude',name:'Claude Sonnet',color:'#B99BF2',q:{code:9.4,reason:9.2,creative:9.1,fact:8.8,summarize:9.0,chat:9.0},speed:7,cost:9,open:'claude'},
+ {id:'haiku',fam:'Claude',name:'Claude Haiku',color:'#D6C2F8',q:{code:8.2,reason:7.5,creative:7.9,fact:8.6,summarize:8.4,chat:8.7},speed:9,cost:2.5,open:'claude'},
+ {id:'gpt',fam:'GPT',name:'GPT flagship',color:'#3FBF7A',q:{code:9.4,reason:9.7,creative:8.9,fact:9.0,summarize:8.9,chat:8.9},speed:5,cost:20,open:'chatgpt'},
+ {id:'gptmini',fam:'GPT',name:'GPT mini',color:'#A6CF2A',q:{code:7.8,reason:7.7,creative:7.2,fact:8.1,summarize:7.9,chat:8.2},speed:9,cost:1.2,open:'chatgpt'},
+ {id:'gpro',fam:'Gemini',name:'Gemini Pro',color:'#4C8DF5',q:{code:9.1,reason:9.3,creative:8.7,fact:9.2,summarize:9.5,chat:8.6},speed:5,cost:15,open:'gemini'},
+ {id:'gflash',fam:'Gemini',name:'Gemini Flash',color:'#56B8EE',q:{code:7.9,reason:7.8,creative:7.4,fact:8.4,summarize:8.8,chat:8.0},speed:10,cost:0.9,open:'gemini'}
+];
+
+const COLS=104, ROWS=44, ASPECT=0.6, VTOP=-0.7, VSPAN=1.82;
+const CH=VSPAN/ROWS, CW=CH*ASPECT;
+const pre=document.getElementById('screen'), statusEl=document.getElementById('status');
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RAMP=" .,:;-=+*#%@", TAILR=" .'`\":;*%#";
+const UBLUE='#2F8FE0', UGOLD='#FFD200';
+const ZFONT={Z:['#####','   # ','  #  ',' #   ','#####'],O:[' ### ','#   #','#   #','#   #',' ### '],T:['#####','  #  ','  #  ','  #  ','  #  '],'!':['#','#','#',' ','#']};
+const ALPHA="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const FUR='#E7D2B4', FURD='#B89A78', STRIPE='#5E4B3C', CREAM='#FFF4E2', PINK='#F59AB0', WHITE='#FFFFFF', DIRT='#4A4152', GREY='#8B96AE';
+
+let state='idle', stateT=0, t=0, lastInput=0;
+let trailColor=GREY, plate=' SNIFFING ', target=null, flapStart=0;
+let blinkAt=2, tongueAt=3, look={x:0,y:0}, pointer=null, fx=[], ants=[];
+for(let i=0;i<7;i++)ants.push({x:-1.3+Math.random()*2.6,v:(Math.random()<0.5?-1:1)*(0.05+Math.random()*0.05)});
+
+function fit(){const w=pre.parentElement.clientWidth-16;pre.style.fontSize=Math.max(5,Math.min(13,w/(COLS*0.602)))+'px'}
+fit();window.addEventListener('resize',fit);
+pre.addEventListener('pointermove',e=>{const r=pre.getBoundingClientRect();pointer={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};lastInput=t;if(state==='nap')wake()});
+pre.addEventListener('pointerleave',()=>pointer=null);
+pre.addEventListener('click',pet);
+
+const len=(x,y)=>Math.sqrt(x*x+y*y);
+const L=(()=>{const x=-0.45,y=-0.7,z=0.55,n=Math.hypot(x,y,z);return[x/n,y/n,z/n]})();
+const shade=(b,ramp)=>{ramp=ramp||RAMP;b=Math.max(0,Math.min(0.999,b));return ramp[1+Math.floor(b*(ramp.length-1))]||ramp[ramp.length-1]};
+function hex(c){return[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]}
+function mix(a,b,k){k=Math.max(0,Math.min(1,k));const A=hex(a),B=hex(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*k).toString(16).padStart(2,'0')).join('')}
+function seg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay;const h=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));return{d:len(px-ax-dx*h,py-ay-dy*h),h}}
+
+function setStatus(s){statusEl.textContent='mandu — '+s}
+function think(){state='thinking';stateT=0;lastInput=t;setStatus('sniffing out the best trail…')}
+function routeTo(m){target=m;state='routing';stateT=0;flapStart=t;lastInput=t;trailColor=m.color;setStatus('following the trail to '+m.name.toLowerCase())}
+function reroute(){const c=MODELS.filter(m=>!target||m.name!==target.name);target=c[Math.floor(Math.random()*c.length)];state='puzzled';stateT=0;lastInput=t;setStatus('hmm, new trail?')}
+function zot(){state='zot';stateT=0;lastInput=t;setStatus('zot! zot! zot!')}
+let keys='';window.addEventListener('keydown',e=>{if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key.length!==1)return;keys=(keys+e.key.toLowerCase()).slice(-3);if(keys==='zot')zot()});
+document.getElementById('prompt').addEventListener('input',e=>{if(/(^|[^a-z])zot!?$/i.test(e.target.value))zot()});
+function nap(){state='nap';stateT=0;setStatus('curled up for a nap')}
+function wake(){state='idle';stateT=0;lastInput=t;setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around')}
+function pet(){if(state==='routing'||state==='puzzled')return;state='happy';stateT=0;lastInput=t;setStatus('happy wiggles');for(let i=0;i<3;i++)fx.push({kind:'heart',x:0.3+Math.random()*0.3,y:-0.35,vy:-0.25-Math.random()*0.1,life:1})}
+
+document.getElementById('zot').onclick=zot;document.getElementById('nap').onclick=nap;
+document.getElementById('wake').onclick=wake;document.getElementById('pet').onclick=pet;
+
+function update(dt){
+  t+=dt;stateT+=dt;
+  if(state==='routing'&&stateT>1.8){state='happy';stateT=0;setStatus('found '+target.name.toLowerCase()+'!');for(let i=0;i<4;i++)fx.push({kind:'heart',x:0.25+Math.random()*0.4,y:-0.35,vy:-0.22-Math.random()*0.12,life:1})}
+  if(state==='puzzled'&&stateT>1.2)routeTo(target);
+  if(state==='happy'&&stateT>2.4){state='idle';stateT=0;setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around')}
+  if(state==='zot'&&stateT>3){state='idle';stateT=0;setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around')}
+  if(state==='zot'&&Math.random()<dt*10)fx.push({kind:'star',x:-0.9+Math.random()*1.9,y:-0.2+Math.random()*0.3,vy:-0.3,life:1,c:Math.random()<0.5?UBLUE:UGOLD});
+  if(state==='idle'&&t-lastInput>22&&!reduce)nap();
+  let tx,ty;
+  if(state==='routing'){tx=1;ty=0.6}
+  else if(state==='thinking'){tx=0.6+Math.sin(t*5)*0.4;ty=1}
+  else if(state==='puzzled'){tx=Math.sin(t*8)*0.9;ty=-0.6}
+  else if(pointer){tx=Math.max(-1,Math.min(1,(pointer.x-0.3)*1.6));ty=Math.max(-1,Math.min(1,(pointer.y+0.2)*1.6))}
+  else{tx=Math.sin(t*0.5)*0.5;ty=Math.sin(t*0.37)*0.3}
+  look.x+=(tx-look.x)*Math.min(1,dt*8);look.y+=(ty-look.y)*Math.min(1,dt*8);
+  // ants
+  const running=state==='routing';
+  ants.forEach((a,i)=>{
+    if(state==='zot'){a.v=0.7*(i%2?1:-1)}else if(running){a.v=0.9+0.1*Math.sin(i)}else if(Math.abs(a.v)>0.2){a.v=(Math.random()<0.5?-1:1)*0.06}
+    if(!running&&Math.random()<dt*0.3)a.v=-a.v;
+    a.x+=a.v*dt;if(a.x>1.35)a.x=-1.35;if(a.x<-1.35)a.x=1.35});
+  if(!running&&state!=='happy')trailColor=mix(trailColor,GREY,dt*0.3);
+  // dust when running
+  if(running&&Math.random()<dt*14)fx.push({kind:'dust',x:-0.6+Math.random()*0.9,y:0.86,vy:-0.08,vx:-0.5,life:0.6});
+  if(state==='nap'&&Math.random()<dt*0.9)fx.push({kind:'z',x:0.55,y:-0.25,vy:-0.12,vx:0.05,life:1});
+  fx.forEach(p=>{p.y+=(p.vy||0)*dt;p.x+=(p.vx||0)*dt;p.life-=dt*(p.kind==='dust'?1.6:0.45)});
+  fx=fx.filter(p=>p.life>0);
+}
+function eyeMode(){
+  if(state==='nap')return'closed';
+  if(state==='happy'||state==='zot')return'happy';
+  if(t>blinkAt){if(t>blinkAt+0.15)blinkAt=t+2.2+Math.random()*3.5;return'closed'}
+  return'open';
+}
+function tongueLen(){
+  if(state==='happy'||state==='zot')return 0.1+0.03*Math.sin(t*14);
+  if(state==='idle'&&t>tongueAt){const k=t-tongueAt;if(k>0.5){tongueAt=t+3+Math.random()*4;return 0}return Math.sin(k/0.5*Math.PI)*0.16}
+  return 0;
+}
+
+function render(){
+  const N=ROWS*COLS,grid=new Array(N).fill(' '),col=new Array(N).fill(null);
+  const running=state==='routing', napping=state==='nap';
+  const zotting=state==='zot';
+  const bob=zotting?-Math.abs(Math.sin(t*7))*0.07:running?Math.abs(Math.sin(t*12))*-0.035:napping?Math.sin(t*1.3)*0.012:Math.sin(t*2.4)*0.018;
+  const breathe=1+(napping?0.03:0.015)*Math.sin(t*(napping?1.3:2.4));
+  const tilt=zotting?Math.sin(t*7)*0.12:state==='puzzled'?0.22*Math.sin(Math.min(1,stateT*3)*Math.PI/2):napping?0.18:state==='happy'?Math.sin(t*6)*0.06:0;
+  const tailA=(napping?0.9:-0.25)+Math.sin(t*(running?9:1.6))*(running?0.18:0.12)+(state==='happy'||zotting?Math.sin(t*14)*0.25:0);
+  const sniff=state==='thinking'?Math.sin(t*22)*0.018:(state==='idle'||running)?Math.sin(t*9)*0.012*(Math.sin(t*0.9)>0.3?1:0):0;
+  const eyes=eyeMode(), tongue=tongueLen();
+  const headY=napping?0.16:0;
+  for(let r=0;r<ROWS;r++){
+    const v=VTOP+(r+0.5)*CH;
+    for(let c=0;c<COLS;c++){
+      const u=(c+0.5-COLS/2)*CW;
+      let x=u+0.05, y=v-bob;
+      let ch=' ',cc=null,depth=-1;
+      const put=(k,col)=>{ch=k;cc=col};
+      // tail (pivot at back of body)
+      {const px=-0.62,py=0.22;const ca=Math.cos(tailA),sa=Math.sin(tailA);const lx=(x-px)*ca+(y-py)*sa,ly=-(x-px)*sa+(y-py)*ca;
+       const ex=lx+0.12,ey=ly+0.4;const ang=Math.atan2(ey,ex);const fr=1+0.09*Math.sin(ang*13+t*2);
+       const q=len(ex/0.2,ey/0.46)/fr;
+       if(q<1){const b=0.2+0.6*(1-q)*(ex<0?0.8:1);put(q>0.86?(Math.sin(ang*13)>0?"'":'`'):shade(b,TAILR),q>0.86?FURD:FUR)}}
+      // far legs
+      const legLift=i=>zotting?Math.max(0,Math.sin(t*14+i*Math.PI))*0.05:running?Math.max(0,Math.sin(t*12+i*Math.PI))*0.08:0;
+      for(const [lx,i] of [[-0.42,1],[0.16,0]]){const lift=legLift(i);if(Math.abs(x-lx)<0.06&&y>0.45&&y<0.82-lift){put('#',FURD)}if(len((x-lx-0.02)/0.08,(y-0.82+lift)/0.05)<1)put('@',FURD)}
+      // body
+      {const cx=-0.1,cy=0.32,rx=0.52*breathe,ry=0.33*breathe;const nx=(x-cx)/rx,ny=(y-cy)/ry,q=nx*nx+ny*ny;
+       if(q<1){const nz=Math.sqrt(1-q);const b=0.12+0.62*Math.max(0,nx*L[0]+ny*L[1]+nz*L[2]);put(shade(b),FUR);
+        // shoulder stripe
+        const s=seg(x,y,0.26,0.34,-0.08,0.1);
+        if(s.d<0.035){put('%',STRIPE)}else if(s.d<0.06){put(':',CREAM)}
+        // belly fluff
+        if(ny>0.82&&Math.abs(Math.sin(x*40))>0.5)put(',',FURD)}}
+      // near legs
+      for(const [lx,i] of [[-0.3,0],[0.28,1]]){const lift=legLift(i);if(Math.abs(x-lx)<0.065&&y>0.5&&y<0.84-lift){put(shade(0.45),FUR)}if(len((x-lx-0.025)/0.085,(y-0.85+lift)/0.05)<1)put('@',FUR);
+        if(len((x-lx-0.06)/0.03,(y-0.86+lift)/0.03)<1)put('v',CREAM)}
+      // head group (rotated for tilt)
+      {const hx=0.42,hy=-0.02+headY;const px=0.3,py=0.15;const ca=Math.cos(tilt),sa=Math.sin(tilt);
+       const X=(x-px)*ca+(y-py)*sa+px, Y=-(x-px)*sa+(y-py)*ca+py;
+       // ear
+       const ed=len(X-0.3,Y-(hy-0.27));if(ed<0.09){put(ed<0.045?'*':'@',ed<0.045?PINK:FUR)}
+       // head sphere
+       const hdx=X-hx,hdy=Y-hy,hd=len(hdx,hdy),HR=0.3;
+       if(hd<HR){const nx=hdx/HR,ny=hdy/HR,nz=Math.sqrt(Math.max(0,1-nx*nx-ny*ny));put(shade(0.14+0.62*Math.max(0,nx*L[0]+ny*L[1]+nz*L[2])),FUR)}
+       // snout (tapered, slightly downward curve)
+       const ax=0.56,ay=hy+0.04,bx=1.02,by=hy+0.2+sniff;const s=seg(X,Y,ax,ay,bx,by);const sr=0.105*(1-s.h)+0.04*s.h;
+       if(s.d<sr){const k=s.d/sr;put(shade(0.2+0.5*(1-k*k)),FUR)}
+       // nose
+       if(len(X-bx-0.01,Y-by)<0.045)put('@',PINK);
+       // tongue
+       if(tongue>0){const tx2=bx+0.03+tongue,ty2=by+0.04+Math.sin(t*20)*0.01;const ts=seg(X,Y,bx+0.03,by+0.01,tx2,ty2);if(ts.d<0.014)put('~',PINK)}
+       // eye
+       const ex=0.47,ey=hy-0.04;const erx=0.085,ery=0.11;const qx=(X-ex)/erx,qy=(Y-ey)/ery;
+       if(eyes==='open'){if(qx*qx+qy*qy<1){const ppx=ex+look.x*0.02,ppy=ey+look.y*0.025;const pq=len((X-ppx)/0.062,(Y-ppy)/0.082);
+          if(pq<1){put(' ',null);if(len((X-ppx+0.018)/0.016,(Y-ppy+0.025)/0.02)<1)put('*',WHITE);else if(len((X-ppx-0.02)/0.01,(Y-ppy-0.025)/0.012)<1)put('.',WHITE)}
+          else put('@',WHITE)}}
+       else if(eyes==='happy'){const dd=len(qx,qy+0.35);if(Math.abs(dd-0.85)<0.25&&qy<0.0)put('^',WHITE)}
+       else{if(Math.abs(qy-0.1)<0.2&&Math.abs(qx)<1&&len(qx,(qy-0.1)*2)<1.1)put('-',FURD)}
+       // blush
+       if(len((X-0.5)/0.06,(Y-(hy+0.1))/0.032)<1)put(state==='happy'||state==='nap'||zotting?'~':'.',PINK)
+      }
+      grid[r*COLS+c]=ch;col[r*COLS+c]=cc;
+    }
+  }
+  const toRC=(x,y)=>[Math.round((y-VTOP)/CH-0.5),Math.round((x-0.05)/CW+COLS/2-0.5)];
+  const place=(x,y,s,color)=>{const[r,c]=toRC(x,y);for(let i=0;i<s.length;i++){if(r>=0&&r<ROWS&&c+i>=0&&c+i<COLS){grid[r*COLS+c+i]=s[i];col[r*COLS+c+i]=color}}};
+  fx.forEach(p=>{if(p.kind==='heart')place(p.x,p.y,'♥',p.life>0.3?PINK:mix('#0B1120',PINK,p.life*3));
+    if(p.kind==='dust')place(p.x,p.y,p.life>0.35?'o':'.',DIRT);
+    if(p.kind==='z')place(p.x,p.y,p.life>0.6?'z':'Z',GREY);
+    if(p.kind==='star')place(p.x,p.y,p.life>0.5?'*':'+',p.c)});
+  if(zotting){const word='ZOT!';const beat=Math.floor(stateT*3.5);const w=word.split('').reduce((a,ch)=>a+ZFONT[ch][0].length+1,0)-1;let c0=Math.round(COLS/2-w/2)+6;const r0=1;
+    word.split('').forEach((ch,li)=>{const g=ZFONT[ch];if(li<=beat){g.forEach((row,ri)=>{for(let k=0;k<row.length;k++){if(row[k]!==' '){const rr=r0+ri,cc=c0+k;if(rr<ROWS&&cc<COLS){grid[rr*COLS+cc]=(beat+li)%2?'#':'@';col[rr*COLS+cc]=(beat+li)%2?UGOLD:UBLUE}}}})}c0+=g[0].length+1});}
+  if(state==='puzzled')place(0.62,-0.45,'?',PINK);
+  // ground + ants
+  const gr=ROWS-3;for(let c=0;c<COLS;c++){const k=(c*7+(running?Math.floor(t*25):0))%11;grid[gr*COLS+c]=k===0?'.':k===5?',':'_';col[gr*COLS+c]=DIRT}
+  ants.forEach(a=>{const c=Math.round(a.x/CW+COLS/2);for(const cc of [c]){if(cc>=0&&cc<COLS){grid[(gr-1)*COLS+cc]='ж';col[(gr-1)*COLS+cc]=zotting?(ants.indexOf(a)%2?UGOLD:UBLUE):trailColor}}});
+  // trail sign
+  let text=plate;
+  if(state==='routing'){const name=' '+target.name.toUpperCase()+' ';const el=t-flapStart;text=name.split('').map((ch,i)=>ch===' '?' ':el>0.35+i*0.07?ch:ALPHA[Math.floor(Math.random()*ALPHA.length)]).join('');if(el>0.35+name.length*0.07)plate=name}
+  else if(state==='thinking')text=' '+'SNIFFING'.slice(0,3+Math.floor(t*6)%6)+' ';
+  else if(state==='nap')text=' z z z ';
+  else if(zotting)text=' ZOT ZOT ZOT ';
+  else if(target){plate=' '+target.name.toUpperCase()+' ';text=plate}
+  text='trail: ['+text+']';
+  const sr=ROWS-1,sc=Math.round(COLS/2-text.length/2);for(let i=0;i<text.length;i++){grid[sr*COLS+sc+i]=text[i];col[sr*COLS+sc+i]=i<6?GREY:zotting?(Math.floor(t*6)%2?UGOLD:UBLUE):'#F5B82E'}
+  let out='';
+  for(let r=0;r<ROWS;r++){let cur,buf='';
+    for(let c=0;c<COLS;c++){const i=r*COLS+c;let ch=grid[i];const k=ch===' '?null:col[i];
+      if(ch==='<')ch='&lt;';else if(ch==='>')ch='&gt;';else if(ch==='&')ch='&amp;';
+      if(k!==cur){if(buf)out+=cur?'<span style="color:'+cur+'">'+buf+'</span>':buf;buf='';cur=k}buf+=ch}
+    if(buf)out+=cur?'<span style="color:'+cur+'">'+buf+'</span>':buf;if(r<ROWS-1)out+='\n'}
+  pre.innerHTML=out;
+}
+// ================= ROUTER =================
+const TASKS={
+ code:{label:'code',re:/\b(code|function|bug|error|python|javascript|java|sql|api|regex|compile|refactor|debug|class|react|typescript|loop|schema|database)\b/gi},
+ reason:{label:'reasoning & analysis',re:/\b(prove|why|calculate|solve|math|equation|probability|logic|plan|strategy|compare|tradeoffs?|analy[sz]e|derive|evaluate|explain)\b/gi},
+ creative:{label:'creative writing',re:/\b(poem|story|lyrics|slogan|tagline|creative|character|script|essay|caption|rewrite)\b/gi},
+ fact:{label:'quick fact',re:/(what is|what's|who is|who was|when did|when was|where is|define|capital of|how many|meaning of)/gi},
+ summarize:{label:'summarizing',re:/\b(summari[sz]e|tl;?dr|condense|key points|article|paper|pdf|document|notes|transcript)\b/gi},
+ chat:{label:'everyday chat',re:/\b(hey|hi|thanks|help me|should i|advice|recommend|ideas?|feel)\b/gi}
+};
+const HARD=/\b(step by step|architecture|design|prove|edge cases?|optimi[sz]e|rigorous|in depth|detailed|tradeoffs?|multi-step|from scratch)\b/gi;
+const SAMPLES=['Fix this off-by-one bug in my Python loop',"What's the capital of Australia?",'Write a short poem about finals week at UCI','Compare fixed vs floating exchange rates for an emerging market, step by step','Summarize this 20-page article into key points','Design the database schema for a ride-share app, handle edge cases'];
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem('antrouter:'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('antrouter:'+k,JSON.stringify(v))}catch(e){}}};
+let bias=store.get('bias',{}), ledger=store.get('ledger',{routes:0,reroutes:0,spent:0,flag:0});
+let current=null, sampleFn=null, busy=false;
+const PLATFORMS=[{id:'any',label:'Any app',fam:null},{id:'claude',label:'Claude',fam:'Claude'},{id:'chatgpt',label:'ChatGPT',fam:'GPT'},{id:'gemini',label:'Gemini',fam:'Gemini'}];
+let platform=store.get('platform','any');
+const allowed=()=>{const f=PLATFORMS.find(x=>x.id===platform).fam;return MODELS.filter(m=>!f||m.fam===f)};
+function renderPlat(){const box=$('plat');box.querySelectorAll('button').forEach(b=>b.remove());
+  PLATFORMS.forEach(pl=>{const b=document.createElement('button');b.textContent=pl.label;b.setAttribute('aria-pressed',platform===pl.id);b.onclick=()=>{platform=pl.id;store.set('platform',platform);renderPlat();setStatus(pl.fam?'working inside '+pl.label:'free to roam any app')};box.appendChild(b)})}
+renderPlat();
+
+SAMPLES.forEach(x=>{const b=document.createElement('button');b.textContent=x;b.onclick=()=>{$('prompt').value=x;doRoute()};$('samples').appendChild(b)});
+$('go').onclick=()=>doRoute();
+$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))doRoute()});
+
+$('engine').textContent='Router: Mandu\'s trail map (runs in your browser)';
+
+function weights(){return{Q:0.6,S:0.2,C:0.2}}
+function classify(text){
+  let best=0,task='chat';
+  for(const k in TASKS){const m=text.match(TASKS[k].re);const n=m?m.length:0;if(n>best){best=n;task=k}}
+  if(best===0)task=text.trim().split(/\s+/).length<8?'fact':'chat';
+  let cx=0.25+Math.min(text.length/500,0.3)+(text.match(HARD)||[]).length*0.18;
+  if(task==='fact'||task==='chat')cx-=0.1;if(task==='reason'||task==='code')cx+=0.1;
+  return{task,complexity:Math.max(0.1,Math.min(1,cx))};
+}
+const LMAX=Math.log(30),LMIN=Math.log(0.9);
+function localScores(task,cx){const w=weights();const o={};
+  MODELS.forEach(m=>{const q=w.Q*((m.q[task]-7)/3)*(0.3+0.7*cx)*2.2,s=w.S*m.speed/10,c=w.C*((LMAX-Math.log(m.cost))/(LMAX-LMIN));o[m.id]=Math.round(Math.max(0,Math.min(100,(q+s+c)*100)))});return o}
+function applyBias(scores,task){const o={};MODELS.forEach(m=>{o[m.id]=Math.max(0,Math.min(100,Math.round((scores[m.id]||0)+((bias[task]&&bias[task][m.id])||0)*100)))});return o}
+function ranked(scores){return allowed().sort((a,b)=>scores[b.id]-scores[a.id])}
+
+function localDecision(text){const c=classify(text);const scores=localScores(c.task,c.complexity);const top=ranked(scores);
+  const w=weights();const r=top[0];let why;
+  const pl=PLATFORMS.find(x=>x.id===platform);
+  const fam=pl.fam?MODELS.filter(m=>m.fam===pl.fam):null;
+  const tier=fam?(r.cost===Math.min(...fam.map(m=>m.cost))?'fastest':r.cost===Math.max(...fam.map(m=>m.cost))?'strongest':'middle'):null;
+  if(fam&&tier==='fastest')why=`You're in ${pl.label} and this ${c.complexity<0.4?'simple':''} ${TASKS[c.task].label} prompt doesn't need more than its fastest, cheapest tier.`.replace('  ',' ');
+  else if(fam&&tier==='strongest')why=`You're in ${pl.label} and this is a ${c.complexity>=0.7?'hard':'demanding'} ${TASKS[c.task].label} prompt, so it's worth ${pl.label}'s strongest tier.`;
+  else if(fam)why=`You're in ${pl.label}; its middle tier handles this ${TASKS[c.task].label} prompt well without paying for the top model.`;
+  else if(c.complexity<0.4&&r.cost<5)why=`A simple ${TASKS[c.task].label} prompt, so a fast, inexpensive model does the job.`;
+  else if(w.Q>0.5)why=`${r.name} is the strongest fit for ${TASKS[c.task].label} at this difficulty.`;
+  else why=`${r.name} gives the best balance of quality, speed and cost for ${TASKS[c.task].label}.`;
+  return{task:c.task,complexity:c.complexity,scores,reason:why}}
+
+async function doRoute(){
+  const text=$('prompt').value.trim();
+  if(!text){$('result').innerHTML='<p class="empty">Type a prompt or tap a sample first.</p>';return}
+  if(busy)return;busy=true;$('go').disabled=true;think();
+  let d;
+  d=localDecision(text);
+  d.final=applyBias(d.scores,d.task);
+  const order=ranked(d.final);
+  current={text,d,chosen:order[0],original:order[0],rerouted:false,rated:false};
+  ledger.routes++;ledger.spent+=order[0].cost;ledger.flag+=30;store.set('ledger',ledger);
+  busy=false;$('go').disabled=false;
+  routeTo(current.chosen);renderResult();renderLearned();
+}
+function nudge(task,id,a){bias[task]=bias[task]||{};bias[task][id]=Math.max(-0.3,Math.min(0.4,(bias[task][id]||0)+a));store.set('bias',bias)}
+function reroute(id){
+  if(!current||current.chosen.id===id||!allowed().some(m=>m.id===id))return;
+  const m=MODELS.find(x=>x.id===id);
+  nudge(current.d.task,id,0.08);nudge(current.d.task,current.original.id,-0.04);
+  ledger.reroutes++;ledger.spent+=m.cost-current.chosen.cost;store.set('ledger',ledger);
+  current.chosen=m;current.rerouted=true;current.rated=true;
+  target=m;state='puzzled';stateT=0;lastInput=t;setStatus('hmm, new trail?');
+  renderResult();renderLearned();
+}
+const OPEN={claude:{label:'Claude',url:q=>'https://claude.ai/new?q='+encodeURIComponent(q)},chatgpt:{label:'ChatGPT',url:q=>'https://chatgpt.com/?q='+encodeURIComponent(q)},gemini:{label:'Gemini',url:()=>'https://gemini.google.com/app'}};
+function esc(x){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function renderResult(){
+  const {d,chosen,rerouted}=current;const order=ranked(d.final);const runner=order.find(m=>m.id!==chosen.id)||chosen;
+  const o=OPEN[chosen.open];
+  let bars='';
+  const fams=[...new Set(allowed().map(m=>m.fam))];
+  fams.forEach(f=>{bars+=`<div class="fam">${f}${fams.length===1?' (you are in this app)':''}</div><div class="chips">`;MODELS.filter(m=>m.fam===f).forEach(m=>{
+    const on=m.id===chosen.id;bars+=`<div class="chip${on?' on':''}" role="button" tabindex="0" data-id="${m.id}" aria-label="Reroute to ${m.name}" style="--c:${m.color}"><span class="sw" style="background:${m.color}"></span>${m.name}</div>`});bars+='</div>'});
+  $('result').innerHTML=`<div class="pick"><span class="meta">${rerouted?'You rerouted to':'Mandu picked'}</span>
+    <h3><span class="sw" style="background:${chosen.color}"></span>${chosen.name}</h3>
+    <div class="meta">Reads as ${TASKS[d.task].label}, complexity ${d.complexity<0.4?'low':d.complexity<0.7?'medium':'high'}. Runner-up: ${runner.name}.</div>
+    <p class="reason">${rerouted?'Got it. Next time a '+TASKS[d.task].label+' prompt comes in, the trail to '+esc(chosen.name)+' will be a little stronger.':esc(d.reason)}</p>
+    ${d.note?`<p class="meta">${esc(d.note)}</p>`:''}
+    <div class="bars">${bars}</div>
+    <div class="open"><a id="openLink" href="${o.url(current.text)}" target="_blank" rel="noopener">Open in ${o.label}</a>
+    ${current.rated?'':'<button id="good">Good route</button>'}<span class="meta">Wrong trail? Tap another model above to reroute.</span></div>
+    ${chosen.open==='gemini'?'<button id="copyBtn" type="button" style="margin-left:8px">Copy prompt</button><p class="meta" id="copyNote" style="margin-top:8px">Gemini can\'t receive a prompt through a link, so AntRouter copies it for you. Paste it into Gemini with Ctrl/Cmd+V.</p>':''}</div>`;
+  $('result').querySelectorAll('.chip').forEach(el=>{const go=()=>reroute(el.dataset.id);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  const copyPrompt=()=>{const txt=current.text;let ok=false;try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>{},()=>{})}catch(e){}const n=$('copyNote');if(n)n.textContent=ok?'Prompt copied. Paste it into Gemini with Ctrl/Cmd+V.':'Copy the prompt from the box above, then paste it into Gemini.'};
+  $('openLink').onclick=()=>{if(chosen.open==='gemini')copyPrompt()};
+  const cb=$('copyBtn');if(cb)cb.onclick=copyPrompt;
+  const g=$('good');if(g)g.onclick=()=>{nudge(d.task,chosen.id,0.03);current.rated=true;pet();renderResult();renderLearned()};
+}
+function renderLearned(){
+  const items=[];for(const tk in bias)for(const id in bias[tk]){const v=bias[tk][id];if(Math.abs(v)>0.001)items.push({tk,id,v})}
+  items.sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
+  $('learned').innerHTML=items.length?items.slice(0,6).map(i=>{const m=MODELS.find(x=>x.id===i.id);return `<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${m.color};margin-right:8px"></span>${TASKS[i.tk].label}: ${i.v>0?'stronger trail to':'weaker trail to'} ${m.name} (${i.v>0?'+':''}${Math.round(i.v*100)})</div>`}).join('')+'<button id="resetT" style="margin-top:10px;padding:7px 12px;font-size:13px">Reset trails</button>':'Nothing learned yet. Tap a different model on a result to reroute, and the trail to it gets stronger.';
+  const r=$('resetT');if(r)r.onclick=()=>{bias={};ledger={routes:0,reroutes:0,spent:0,flag:0};store.set('bias',bias);store.set('ledger',ledger);renderLearned()};
+}
+renderLearned();
+
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(loop)}
+if(reduce){update(0.016);render()}else requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
