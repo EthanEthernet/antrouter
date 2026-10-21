@@ -11,8 +11,9 @@ Built as a course prototype at UC Irvine.
 ## Try it
 
 - **Live prototype:** https://claude.ai/artifact/QukhYtx9aMp2BWc4KP9tMR
-- **Run locally:** open `index.html` in any modern browser. No build step, no install, no API key.
-- **Watch the loop:** press **▶ Watch the 1-minute tour** in the app, or play [`media/antrouter-1min-tour.mp4`](media/antrouter-1min-tour.mp4).
+- **Run locally:** double-click `index.html`. No build step, no install, no API key.
+- **Chrome extension:** open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick this folder. Click the AntRouter icon in the toolbar to open Mandu in a popup. Progress in the popup is saved separately from the website.
+- **Watch the loop:** press **▶ 1-minute tour** on the website, or play [`media/antrouter-1min-tour.mp4`](media/antrouter-1min-tour.mp4).
 
 ## What's in the prototype
 
@@ -34,13 +35,31 @@ Everything runs in the browser. Trails, belly, XP, crumbs and gear are saved in 
 ## Repo layout
 
 ```
-index.html                         the full prototype (single file: HTML, CSS, JS)
+index.html                         the app page (website and extension popup)
+manifest.json                      Chrome extension manifest (popup = index.html?popup)
+css/app.css                        all styles, including the compact popup layout
+src/models.js                      the 7 models, platforms and hand-off links
+src/storage.js                     localStorage helpers (antrouter: keys)
+src/router.js                      classify, score, learn from reroutes, explain (no page code)
+src/game.js                        XP, crumbs, levels, quests, badges, shop
+src/mandu.js                       Mandu's ASCII renderer and moods
+src/result.js                      the result card
+src/tour.js                        the 1-minute guided tour
+src/app.js                         wires the page together: chat, tabs, panels
+icons/, tools/make-icons.ps1       extension icons and the script that draws them
+tests/                             node --test checks
 versions/v1-before-progression/    earlier build, before belly ants, window buttons, levels and shop
-docs/concept-art.png               concept art sheet captured from the prototype
-docs/prompt-adapter-research.md    research report on a per-model prompt adapter (next feature)
+docs/                              concept art, research, design spec and plan
 media/antrouter-1min-tour.mp4      recording of the 1-minute guided tour
 tools/record-tour.js               Playwright script that re-records the tour
 ```
+
+## Working on the code
+
+- Every file in `src/` adds itself to one shared object, `AntRouter` (for example `AntRouter.router`). Don't use `import`/`export`, because they break double-clicking `index.html`.
+- Don't put `<script>` code or `onclick="…"` attributes in `index.html`. Chrome extensions block them, so put code in `src/` instead.
+- `index.html` loads the scripts in order: models, storage, router, game, mandu, result, tour, app. A new file goes before the files that use it.
+- **Tests:** with Node installed, run `node --test` from this folder.
 
 ## How the router works (prototype)
 
