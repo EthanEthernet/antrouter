@@ -24,7 +24,7 @@
    customize:'<b>Customize:</b> looking sharp. Ask another prompt to go around the loop again.'};
   let loopDone=new Set(), loopOn=null;
 
-  const mandu=A.mandu.createMandu({screen:$('screen'),status:$('status'),reduce,store:S,maxFont:POPUP?7:13,
+  const mandu=A.mandu.createMandu({screen:$('screen'),status:$('status'),reduce,store:S,maxFont:POPUP?5:13,
     getWorn:id=>game.wearing(id),
     getHud:()=>{const l=game.levelInfo();return{index:l.index,name:l.name,fill:Math.round(l.progress*8),crumbs:game.state().crumbs}},
     onLanded:()=>{loopStep('reveal');setTimeout(()=>loopStep('reward'),900)},
@@ -32,11 +32,11 @@
 
   // ---- tabs ----
   function showTab(id,focus){
-    TABS.forEach(t=>{const on=t===id,b=$('tab-'+t);b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;if(on)b.classList.remove('has-news')});
+    TABS.forEach(t=>{const on=t===id,b=$('tab-'+t);b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;if(on){b.classList.remove('has-news');if(t==='progress')b.removeAttribute('aria-label')}});
     S.set('tab',id);if(focus)$('tab-'+id).focus()}
   TABS.forEach((t,i)=>{const b=$('tab-'+t);b.onclick=()=>showTab(t);
     b.onkeydown=e=>{const n=TABS.length,j=e.key==='ArrowRight'?(i+1)%n:e.key==='ArrowLeft'?(i+n-1)%n:e.key==='Home'?0:e.key==='End'?n-1:-1;if(j>=0){e.preventDefault();showTab(TABS[j],true)}}});
-  function flagProgress(){if($('tab-progress').getAttribute('aria-selected')!=='true')$('tab-progress').classList.add('has-news')}
+  function flagProgress(){if($('tab-progress').getAttribute('aria-selected')!=='true'){$('tab-progress').classList.add('has-news');$('tab-progress').setAttribute('aria-label','Progress (new)')}}
 
   // ---- chat ----
   function renderPlat(){const box=$('plat');box.querySelectorAll('button').forEach(b=>b.remove());
@@ -76,7 +76,7 @@
     $('bellySplit').innerHTML=total?FAMILIES.map(f=>`<span class="pill" style="--c:${FAMILY_COLORS[f]}"><span class="sw" style="background:${FAMILY_COLORS[f]}"></span>${f} ${Math.round(b[f]/total*100)}%</span>`).join('')+`<span class="meta">${total} routed</span>`:'<span class="meta">Belly empty: route a prompt to feed Mandu.</span>';
     const items=[];for(const tk in bias)for(const id in bias[tk]){const v=bias[tk][id];if(Math.abs(v)>0.001)items.push({tk,id,v})}
     items.sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
-    $('learned').innerHTML=items.length?items.slice(0,6).map(i=>{const m=MODELS.find(x=>x.id===i.id);return `<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${m.color};margin-right:8px"></span>${R.TASKS[i.tk].label}: ${i.v>0?'stronger trail to':'weaker trail to'} ${m.name} (${i.v>0?'+':''}${Math.round(i.v*100)})</div>`}).join('')+'<button id="resetT" style="margin-top:10px;padding:7px 12px;font-size:13px">Reset trails and belly</button>':'Nothing learned yet. Tap a different model on a result to reroute, and the trail to it gets stronger.';
+    $('learned').innerHTML=(items.length?items.slice(0,6).map(i=>{const m=MODELS.find(x=>x.id===i.id);return `<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${m.color};margin-right:8px"></span>${R.TASKS[i.tk].label}: ${i.v>0?'stronger trail to':'weaker trail to'} ${m.name} (${i.v>0?'+':''}${Math.round(i.v*100)})</div>`}).join(''):'Nothing learned yet. Tap a different model on a result to reroute, and the trail to it gets stronger.')+(items.length||total?'<button id="resetT" style="margin-top:10px;padding:7px 12px;font-size:13px">Reset trails and belly</button>':'');
     const r=$('resetT');if(r)r.onclick=()=>{bias={};ledger={routes:0,reroutes:0,spent:0,flag:0};S.set('bias',bias);S.set('ledger',ledger);mandu.resetBelly();renderTrails()};
   }
 
@@ -106,7 +106,7 @@
     $('shop').innerHTML=SHOP.map(it=>{const own=p.owned.includes(it.id),locked=li+1<it.lvl,afford=p.crumbs>=it.cost;
       const btn=own?`<button data-wear="${it.id}">${game.wearing(it.id)?'Take off':'Wear'}</button>`:locked?`<button disabled>Unlocks at Lv${it.lvl} ${LEVELS[it.lvl-1].n}</button>`:`<button data-buy="${it.id}" ${afford?'':'disabled'}>Buy for ${it.cost} crumbs</button>`;
       return `<div class="item${game.wearing(it.id)?' worn':''}"><div class="ico" style="color:${it.id==='bandana'?UBLUE:it.id==='gold'?UGOLD:it.id==='shades'?'#8B96AE':'#FF6FA3'}">${esc(it.ico)}</div><b>${it.name}</b><span class="meta">${it.desc}</span>${btn}</div>`}).join('');
-    $('shop').querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const it=SHOP.find(x=>x.id===b.dataset.buy);if(!game.buy(it.id))return;mandu.pet();toast('Bought '+it.name+'! Mandu is wearing it.');loopStep('customize')});
+    $('shop').querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const it=SHOP.find(x=>x.id===b.dataset.buy);toast('Bought '+it.name+'! Mandu is wearing it.');if(!game.buy(it.id))return;mandu.pet();loopStep('customize')});
     $('shop').querySelectorAll('[data-wear]').forEach(b=>b.onclick=()=>{const on=game.toggleWear(b.dataset.wear);loopStep('customize');if(on)mandu.pet()});
   }
   function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),2600)}
@@ -139,7 +139,7 @@
   $('wRelaunch').onclick=()=>{term.classList.remove('quit');mandu.relaunch();$('wRelaunch').blur()};
   shadeEl.onclick=()=>setMax(false);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&term.classList.contains('max'))setMax(false)});
-  $('tourBtn').onclick=()=>A.tour.run({resetForTour,doRoute,showTab,clickPlat,game});
+  $('tourBtn').onclick=()=>A.tour.run({stopMandu:()=>mandu.stop(),resetForTour,doRoute,showTab,clickPlat,game});
   $('tourStop').onclick=()=>A.tour.stop();
 
   // ---- first paint ----

@@ -157,7 +157,23 @@ html.popup .top h1{font-size:26px}
 html.popup .top+.sub{display:none}
 html.popup .tabbar{margin:12px 0}
 html.popup .tourbtn,html.popup .tourbar{display:none}
-html.popup .stage{grid-template-columns:1fr}
-html.popup .side{position:static}
+html.popup .stage{grid-template-columns:auto minmax(0,1fr);gap:14px}
+html.popup .side{position:static;width:330px}
+html.popup .mood{margin-top:8px;gap:6px}
+html.popup .mood button{padding:6px 10px;font-size:12px}
+html.popup .chat{padding:10px 12px}
+html.popup .plat{margin:0 0 8px;gap:6px}
+html.popup .plat button{padding:6px 10px;font-size:12px}
+html.popup .chat textarea{min-height:40px;height:40px}
+html.popup .samples{flex-wrap:nowrap;overflow-x:auto;margin-top:6px}
+html.popup .samples button{white-space:nowrap;flex:none}
+html.popup .chat .open{margin-top:8px}
+html.popup .chat .open .meta{display:none}
+html.popup .panel{gap:10px}
+html.popup .card{padding:12px}
+html.popup .loop{display:none}
+html.popup .tabbar{margin:8px 0}
 html.popup pre{padding:10px 0 8px}
 html.popup .samples button{font-size:12px;padding:6px 9px}
+html.popup .chat label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+html.popup .go{padding:9px 16px;font-size:14px}

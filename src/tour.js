@@ -35,7 +35,7 @@
       cap('ZOT!','Fellow Anteaters: type zot.');app.clickPlat('Any app');await typeIn('zot');await sleep(3600);
       cap('LOOP','That is the loop: Ask, Route, Reveal, Steer, Learn, level up. Your turn!');app.showTab('route');await sleep(4200);
     }catch(e){}
-    clearInterval(tick);A.storage.restore(saved);location.reload();
+    clearInterval(tick);app.stopMandu();A.storage.restore(saved);location.reload();
   }
   function stop(){abort=true;$('tourCap').textContent='Stopping…'}
   A.tour={run,stop};
