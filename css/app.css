@@ -150,3 +150,14 @@ input[type=range]{width:100%;accent-color:var(--signal)}
 @media (max-width:460px){.panel .states{grid-template-columns:1fr}}
 .panel .brief{margin-top:0}
 .panel .brief .lede{color:var(--ink)}
+/* ---- extension popup (html.popup is set by app.js) ---- */
+html.popup body{width:780px;height:580px;overflow-y:auto}
+html.popup .wrap{padding:12px 14px 20px}
+html.popup .top h1{font-size:26px}
+html.popup .top+.sub{display:none}
+html.popup .tabbar{margin:12px 0}
+html.popup .tourbtn,html.popup .tourbar{display:none}
+html.popup .stage{grid-template-columns:1fr}
+html.popup .side{position:static}
+html.popup pre{padding:10px 0 8px}
+html.popup .samples button{font-size:12px;padding:6px 9px}
