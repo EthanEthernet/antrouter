@@ -14,7 +14,7 @@ The design also takes in the professor's feedback: **the chat box goes at the to
 | Question | Decision | Why |
 |---|---|---|
 | What the extension does | Toolbar **popup** | The cheapest useful form, and it reuses the website. An on-site overlay for ChatGPT, Claude and Gemini stays on the roadmap. |
-| Tooling | **Plain files, native ES modules, no build** | No libraries are needed yet. Nobody on the team has to install Node to run the site. Pages and Chrome both load the folder as-is. Moving to Vite later is easy because the code will already use ES modules. |
+| Tooling | **Plain files, classic scripts, no build** | No libraries are needed yet. Nobody on the team has to install anything to run the site. Each file adds itself to one shared global, `AntRouter`, instead of using `import`/`export`, because browsers block ES modules on pages opened by double-clicking (`file://`). Double-clicking `index.html` keeps working, and Pages and Chrome load the folder as-is. |
 | Page structure | **Tabs**, with the chat at the top | Professor feedback. Tabs also let the full app fit in a popup. |
 | Where Mandu lives | **Always visible**, next to the tab content | Gear bought in the Shop shows up on Mandu immediately, and he reacts to quests and routes from any tab. |
 | Popup vs site | **Same page.** The popup is `index.html?popup` in a compact layout | One page and one script to maintain. The popup gets every tab except the tour. |
@@ -50,7 +50,7 @@ The design also takes in the professor's feedback: **the chat box goes at the to
 | **Trails** | "Your trails" (learned bias), the belly split per family, and "Reset trails and belly" |
 | **Progress** | Level, XP bar, badges, quests and the quest counter |
 | **Shop** | Gear items and "Reset level, crumbs and gear" |
-| **About** | The four mood cards, "Why an anteater" and the tour button |
+| **About** | The four mood cards and "Why an anteater" (the tour button lives in the tab bar) |
 
 ### Tab behavior
 
@@ -70,29 +70,33 @@ The 1-minute tour keeps its sandboxed-progress behavior. It now switches tabs in
 index.html            the one app page (markup only, no inline script)
 manifest.json         Chrome MV3 manifest; action.default_popup = "index.html?popup"
 css/app.css           all styles, including the .popup compact layout
-src/models.js         MODELS, PLATFORMS, OPEN handoff links (data only)
-src/router.js         classify, score, applyBias, rank, decide + reason text (pure, no DOM)
-src/storage.js        the antrouter: localStorage wrapper (get/set, try/catch)
-src/mandu.js          createMandu(screenEl, statusEl) → { routeTo, queueEat, pet, zot, nap, wake, setGear, … }
-src/game.js           XP, crumbs, levels, quests, badges, shop; emits events (levelup, quest, badge)
-src/result.js         renders the result card into a given element
-src/app.js            tabs, chat, wiring between modules, toasts, tour, popup mode
-icons/                extension icons (16/48/128 px), made from Mandu's face
-tests/router.test.js  node --test checks for the router
+src/models.js         MODELS, PLATFORMS, FAMILY_COLORS, OPEN handoff links (data only)
+src/storage.js        the antrouter: localStorage wrapper (get/set, snapshot/restore, try/catch)
+src/router.js         classify, score, applyBias, rank, decide + reason text, nudge (pure, no DOM)
+src/game.js           XP, crumbs, levels, quests, badges, shop; emits events (change, toast, levelup, quest, badge)
+src/mandu.js          createMandu({...}) → { routeTo, puzzle, queueEat, pet, zot, nap, wake, belly, … }
+src/result.js         builds and wires the result card
+src/tour.js           the 1-minute tour, driven through a small API from app.js
+src/app.js            tabs, chat, wiring between modules, toasts, popup mode
+icons/                extension icons (16/48/128 px): a gold ant glyph on navy, drawn by tools/make-icons.ps1
+tests/*.test.js       node --test checks for router, game and result
 versions/             unchanged
 ```
+
+`index.html` loads the scripts in dependency order (models, storage, router, game, mandu, result, tour, app) with plain `<script src>` tags at the end of `<body>`. Each file is wrapped as `(function (A) { … A.router = {…} })(globalThis.AntRouter = globalThis.AntRouter || {});`. Tests load the same files in Node with `require()`, which fills `globalThis.AntRouter` the same way.
 
 ### Module boundaries
 
 - **`router.js`** has no DOM access and no storage access. It takes the prompt text, platform and bias as arguments. This keeps it testable in Node and ready to be replaced by a model-based classifier later.
-- **`mandu.js`** owns the animation loop, moods, belly and gear drawing. It reads belly counts and worn gear through values it is given, so it doesn't reach into `game.js`.
+- **`mandu.js`** owns the animation loop, moods, gear drawing and the belly (including saving it under `antrouter:belly`). It reads worn gear and the level/crumbs readout through callbacks it is given, so it doesn't reach into `game.js`.
 - **`game.js`** owns the progress state and its persistence. It knows nothing about the DOM. `app.js` listens to its events and turns them into toasts, tab dots and Mandu reactions.
 - **`app.js`** is the only file that touches the page layout.
 
 ## Extension specifics
 
 - **Manifest V3:** `name`, `version`, `action.default_popup`, `icons`. No permissions are requested. Handoff uses normal links with `target="_blank"`, which open new tabs from a popup without needing the `tabs` permission.
-- **No inline scripts.** MV3 blocks them, which is why all JS lives in `src/` and loads as `<script type="module" src="src/app.js">`. Inline `style=""` attributes and `innerHTML` with styles are allowed.
+- **No inline scripts.** MV3 blocks them, which is why all JS lives in `src/` and loads through `<script src>` tags. Inline `style=""` attributes and `innerHTML` with styles are allowed.
+- **Popup detection:** the compact layout turns on when the URL has `?popup` **or** the page runs from a `chrome-extension:` URL. The second check keeps the popup compact even if Chrome drops the query string.
 - **Fonts:** keep the Google Fonts stylesheet. The default extension CSP does not restrict styles or fonts. If the fonts fail to load (offline), the page falls back to system fonts.
 - **Storage:** the popup uses the extension's own `localStorage`. Website progress and extension progress are **separate**, because browser storage is per-site. Syncing them would need accounts, which are on the roadmap and out of scope here.
 - **Popup sizing:** in popup mode the body is fixed at 780×580 so Chrome's popup frame doesn't clip it.
@@ -106,10 +110,12 @@ versions/             unchanged
 
 ## Testing
 
-- **Automated** (`node --test tests/`; optional, needs Node):
-  - Each of the six sample prompts gets the same task type and top pick as the current prototype.
+- **Automated** (`node --test`; optional, needs Node):
+  - Each of the six sample prompts gets the same task type, complexity, ranking, scores and reason as the current prototype, for every platform.
   - Platform filtering only returns that vendor's models.
   - Bias from a reroute changes the ranking as expected.
+  - Game: XP, crumbs, level-up, quest rotation, badges awarded once, shop buy/wear.
+  - Result card: labels, escaping, Gemini copy button, Good route hidden once rated.
 - **Manual** in Chrome, on the website (served locally) and in the popup (Load unpacked):
   - Every tab opens, the last tab is remembered, and keyboard navigation works.
   - Route, reroute, Good route, Open in Claude/ChatGPT, and Copy prompt for Gemini.
