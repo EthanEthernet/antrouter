@@ -12,7 +12,7 @@
   const game=A.game.createGame(S);
   let bias=S.get('bias',{}), ledger=S.get('ledger',{routes:0,reroutes:0,spent:0,flag:0});
   let platform=S.get('platform','any');if(!PLATFORMS.some(p=>p.id===platform))platform='any';
-  let current=null, newQ=null;
+  let current=null, newQ=null, clearNewQ;
   const TABS=['route','trails','progress','shop','about'];
   const LOOP=[['ask','Ask'],['route','Route'],['reveal','Reveal'],['steer','Steer'],['learn','Learn'],['reward','Reward'],['customize','Customize']];
   const HINTS={ask:'<b>Ask:</b> press Route prompt (or Ctrl/Cmd+Enter) to send it to Mandu.',
@@ -94,7 +94,7 @@
   function renderHeader(){const l=game.levelInfo();$('hdrStats').textContent='Lv'+(l.index+1)+' '+l.name+' · '+game.state().crumbs+' crumbs'}
   function renderQuests(){const p=game.state(),Q0=A.game.QUESTS;$('qdone').textContent=p.qdone+' quest'+(p.qdone===1?'':'s')+' done';
     $('quests').innerHTML=p.quests.map(q=>{const Q=Q0[q.id];const pct=Math.min(100,Math.round(q.n/Q.goal*100));
-      return `<div class="q${newQ===q.id?' new':''}"><b>${Q.t}</b><div class="qbar"><span style="width:${pct}%"></span></div><div class="meta"><span>${Math.min(q.n,Q.goal)} / ${Q.goal}</span><span>+${Q.rw} crumbs</span></div></div>`}).join('');newQ=null}
+      return `<div class="q${newQ===q.id?' new':''}"><b>${Q.t}</b><div class="qbar"><span style="width:${pct}%"></span></div><div class="meta"><span>${Math.min(q.n,Q.goal)} / ${Q.goal}</span><span>+${Q.rw} crumbs</span></div></div>`}).join('')}
   function renderProg(){
     const l=game.levelInfo(),p=game.state(),li=l.index,{LEVELS,SHOP,BADGES}=A.game,esc=A.result.esc;
     $('lvName').textContent='Lv'+(li+1)+' '+l.name;
@@ -124,7 +124,7 @@
   game.on('change',()=>{renderHeader();renderProg();renderQuests();renderLoop()});
   game.on('toast',toast);
   game.on('levelup',e=>{mandu.levelUp(e.name);toast('Level up! Mandu is now a '+e.name+(e.unlocked.length?'. New in the shop: '+e.unlocked.join(', '):''))});
-  game.on('quest',e=>{newQ=e.next;flagProgress()});
+  game.on('quest',e=>{newQ=e.next;clearTimeout(clearNewQ);clearNewQ=setTimeout(()=>{newQ=null},700);flagProgress()});
   game.on('badge',flagProgress);
   R.SAMPLES.forEach(x=>{const b=document.createElement('button');b.textContent=x;b.onclick=()=>{$('prompt').value=x;doRoute()};$('samples').appendChild(b)});
   $('go').onclick=()=>doRoute();
