@@ -4,7 +4,7 @@
   const TASKS={
    code:{label:'code',re:/\b(code|function|bug|error|python|javascript|java|sql|api|regex|compile|refactor|debug|class|react|typescript|loop|schema|database)\b/gi},
    reason:{label:'reasoning & analysis',re:/\b(prove|why|calculate|solve|math|equation|probability|logic|plan|strategy|compare|tradeoffs?|analy[sz]e|derive|evaluate|explain)\b/gi},
-   creative:{label:'creative writing',re:/\b(poem|story|lyrics|slogan|tagline|creative|character|script|essay|caption|rewrite)\b/gi},
+   creative:{label:'creative writing',re:/\b(poems?|stor(y|ies)|lyrics|slogan|tagline|creative|character|script|essay|caption|rewrite|haikus?|limericks?|sonnets?|jokes?|songs?|verses?|rhymes?|fiction)\b/gi},
    fact:{label:'quick fact',re:/(what is|what's|who is|who was|when did|when was|where is|define|capital of|how many|meaning of)/gi},
    summarize:{label:'summarizing',re:/\b(summari[sz]e|tl;?dr|condense|key points|article|paper|pdf|document|notes|transcript)\b/gi},
    chat:{label:'everyday chat',re:/\b(hey|hi|thanks|help me|should i|advice|recommend|ideas?|feel)\b/gi}
@@ -33,6 +33,7 @@
     const fam=pl.fam?MODELS.filter(m=>m.fam===pl.fam):null;
     const tier=fam?(r.cost===Math.min(...fam.map(m=>m.cost))?'fastest':r.cost===Math.max(...fam.map(m=>m.cost))?'strongest':'middle'):null;
     if(fam&&tier==='fastest')return`You're in ${pl.label} and this ${c.complexity<0.4?'simple':''} ${label} prompt doesn't need more than its fastest, cheapest tier.`.replace('  ',' ');
+    if(fam&&tier==='strongest'&&c.complexity<0.4)return`You're in ${pl.label}; this ${label} prompt is simple, but ${pl.label}'s strongest tier is clearly better at it.`;
     if(fam&&tier==='strongest')return`You're in ${pl.label} and this is a ${c.complexity>=0.7?'hard':'demanding'} ${label} prompt, so it's worth ${pl.label}'s strongest tier.`;
     if(fam)return`You're in ${pl.label}; its middle tier handles this ${label} prompt well without paying for the top model.`;
     if(c.complexity<0.4&&r.cost<5)return`A simple ${label} prompt, so a fast, inexpensive model does the job.`;

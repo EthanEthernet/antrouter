@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AntRouter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mandu the ASCII anteater picks the best AI model for your prompt: Claude, GPT or Gemini.",
   "action": {
     "default_popup": "index.html?popup",

@@ -49,6 +49,26 @@ test('a reroute moves one ant between families; reset empties the belly', () => 
   assert.deepEqual(m.belly(), { Claude: 0, GPT: 0, Gemini: 0 });
 });
 
+test('reduced motion still redraws when Mandu routes, cheers and naps', () => {
+  const { m, screen } = make();
+  const sonnet = globalThis.AntRouter.models.MODELS.find(x => x.id === 'sonnet');
+  m.routeTo(sonnet);
+  assert.match(text(screen), /trail: \[ CLAUDE SONNET \]/);
+  m.zot();
+  assert.match(text(screen), /ZOT ZOT ZOT/);
+  m.nap();
+  assert.match(text(screen), /z z z/);
+  assert.equal(m.busy(), false);
+});
+
+test('busy while following a trail, so a second route has to wait', () => {
+  globalThis.requestAnimationFrame = () => 1; globalThis.cancelAnimationFrame = () => {};
+  const { m } = make({}, { reduce: false });
+  m.stop();
+  m.routeTo(globalThis.AntRouter.models.MODELS[0]);
+  assert.equal(m.busy(), true);
+});
+
 test('status line keeps the mandu prefix', () => {
   const { m, status } = make();
   m.setStatus('exited');

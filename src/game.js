@@ -1,6 +1,6 @@
 // Progress: XP, crumbs, levels, quests, badges and the gear shop. No page access: the page listens to events.
 (function (A) {
-  const LEVELS=[{n:'Pup',xp:0},{n:'Forager',xp:40},{n:'Tracker',xp:100},{n:'Trailblazer',xp:180}];
+  const LEVELS=[{n:'Pup',xp:0},{n:'Forager',xp:60},{n:'Tracker',xp:160},{n:'Trailblazer',xp:300}];
   const SHOP=[
    {id:'bow',name:'Tail bow',ico:'>@<',cost:10,lvl:1,desc:'A pink bow where the tail meets the rump.'},
    {id:'hat',name:'Party hat',ico:'/\\',cost:20,lvl:1,desc:'Striped cone hat with a gold pompom.'},
@@ -22,9 +22,16 @@
     const ls={};
     const on=(ev,fn)=>{(ls[ev]=ls[ev]||[]).push(fn)};
     const emit=(ev,data)=>{(ls[ev]||[]).forEach(fn=>fn(data))};
+    // This session only (not saved): feeds the recap on the exit screen.
+    const snap=now=>({at:now||Date.now(),xp:prog.xp,level:lvlIndex(prog.xp),badges:prog.badges.slice(),laps:prog.laps,routes:0,reroutes:0,goods:0,earned:0,spent:0,belly:{Claude:0,GPT:0,Gemini:0}});
+    let session=snap();
+    function startSession(now){session=snap(now)}
+    function sessionSummary(now){const s=session;
+      return{ms:(now||Date.now())-s.at,routes:s.routes,reroutes:s.reroutes,goods:s.goods,laps:prog.laps-s.laps,xp:prog.xp-s.xp,earned:s.earned,spent:s.spent,
+        levelFrom:LEVELS[s.level].n,levelTo:LEVELS[lvlIndex(prog.xp)].n,badges:prog.badges.filter(b=>!s.badges.includes(b)).map(id=>BADGES.find(x=>x.id===id).n),belly:{...s.belly}}}
     function save(){store.set('prog',prog);emit('change')}
     function levelInfo(){const i=lvlIndex(prog.xp),L0=LEVELS[i],L1=LEVELS[i+1]||null;return{index:i,name:L0.n,xp:prog.xp,next:L1,progress:L1?(prog.xp-L0.xp)/(L1.xp-L0.xp):1}}
-    function award(xp,cr){const before=lvlIndex(prog.xp);prog.xp+=xp;prog.crumbs+=cr;const after=lvlIndex(prog.xp);save();
+    function award(xp,cr){const before=lvlIndex(prog.xp);prog.xp+=xp;prog.crumbs+=cr;session.earned+=cr;const after=lvlIndex(prog.xp);save();
       if(after>before)emit('levelup',{name:LEVELS[after].n,unlocked:SHOP.filter(s=>s.lvl===after+1).map(s=>s.name)})}
     function badge(id){if(prog.badges.includes(id))return;prog.badges.push(id);const b=BADGES.find(x=>x.id===id);award(15,10);emit('toast','Badge: '+b.n+'  +10 crumbs');emit('badge',id)}
     function quest(type,amt,absolute){let changed=false;
@@ -34,19 +41,22 @@
           prog.quests[i]={id:next,n:QUESTS[next].type==='fam'?prog.fams.length:0};emit('quest',{done:q.id,next})}});
       if(changed)save()}
     const addFam=f=>{if(!prog.fams.includes(f))prog.fams.push(f)};
-    function routed(fam,ctx){prog.routes++;addFam(fam);award(10,5);
+    function routed(fam,ctx){prog.routes++;session.routes++;session.belly[fam]++;addFam(fam);award(10,5);
       quest('route');if(ctx.platform!=='any')quest('plat');if(ctx.task==='code')quest('code');quest('fam',prog.fams.length,true);
       badge('first');if(prog.fams.length>=3)badge('tri');if(prog.routes>=9)badge('full')}
-    function rerouted(fam){addFam(fam);award(5,2);quest('reroute');quest('fam',prog.fams.length,true);badge('reroute');if(prog.fams.length>=3)badge('tri')}
-    function ratedGood(){award(5,3);quest('good');badge('good')}
+    // Only the first reroute of a result pays, so flipping between chips can't farm XP.
+    function rerouted(fam,o){o=o||{};addFam(fam);if(o.from&&session.belly[o.from]>0)session.belly[o.from]--;session.belly[fam]++;
+      if(o.first!==false){session.reroutes++;award(5,2);quest('reroute');badge('reroute')}
+      quest('fam',prog.fams.length,true);if(prog.fams.length>=3)badge('tri')}
+    function ratedGood(){session.goods++;award(5,3);quest('good');badge('good')}
     function zotted(){quest('zot');badge('zot')}
     function buy(id){const it=SHOP.find(x=>x.id===id);if(!it||prog.owned.includes(id)||lvlIndex(prog.xp)+1<it.lvl||prog.crumbs<it.cost)return false;
-      prog.crumbs-=it.cost;prog.owned.push(id);prog.worn[id]=true;save();quest('gear');badge('dress');return true}
+      prog.crumbs-=it.cost;session.spent+=it.cost;prog.owned.push(id);prog.worn[id]=true;save();quest('gear');badge('dress');return true}
     function toggleWear(id){if(!prog.owned.includes(id))return false;prog.worn[id]=!prog.worn[id];save();quest('gear');return prog.worn[id]}
     const wearing=id=>!!prog.worn[id];
-    function addLap(){prog.laps++;save()}
-    function reset(){prog=freshProg();save()}
-    return{on,state:()=>prog,levelInfo,wearing,routed,rerouted,ratedGood,zotted,buy,toggleWear,addLap,reset};
+    function addLap(){prog.laps++;award(5,3)}
+    function reset(){prog=freshProg();session=snap();save()}
+    return{on,state:()=>prog,levelInfo,wearing,routed,rerouted,ratedGood,zotted,buy,toggleWear,addLap,reset,startSession,sessionSummary};
   }
   A.game={createGame,LEVELS,SHOP,BADGES,QUESTS};
 })(globalThis.AntRouter = globalThis.AntRouter || {});

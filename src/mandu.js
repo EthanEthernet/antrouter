@@ -18,7 +18,7 @@ const WIN=(x,y)=>((x+0.04)/0.31)**2+((y-0.39)/0.2)**2;
     let belly=(()=>{const v=store.get('belly',null);return v&&typeof v==='object'?{Claude:v.Claude|0,GPT:v.GPT|0,Gemini:v.Gemini|0}:{Claude:0,GPT:0,Gemini:0}})();
     let gulpAt=-9, pendingEat=null, levelUpAt=-9, levelUpName='';
     function saveBelly(){store.set('belly',belly);if(opts.onBellyChange)opts.onBellyChange()}
-function eat(fam,from){if(from&&belly[from]>0)belly[from]--;belly[fam]=(belly[fam]||0)+1;gulpAt=t;saveBelly()}
+function eat(fam,from){if(from&&belly[from]>0)belly[from]--;belly[fam]=(belly[fam]||0)+1;gulpAt=t;saveBelly();still()}
 function queueEat(fam,from){if(reduce){eat(fam,from);return}if(pendingEat)pendingEat.fam=fam;else pendingEat={fam,from:from||null}}
 // fixed slots inside the stomach, model coords
 const SLOTS=(()=>{const o=[];for(let y=0.24;y<=0.54;y+=0.04)for(let x=-0.32;x<=0.24;x+=0.044){const q=((x+0.04)/0.27)**2+((y-0.39)/0.165)**2;if(q<1)o.push([x,y])}
@@ -39,12 +39,18 @@ function hex(c){return[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parse
 function mix(a,b,k){k=Math.max(0,Math.min(1,k));const A=hex(a),B=hex(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*k).toString(16).padStart(2,'0')).join('')}
 function seg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay;const h=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));return{d:len(px-ax-dx*h,py-ay-dy*h),h}}
 function setStatus(s){statusEl.textContent='mandu — '+s}
-function routeTo(m){target=m;state='routing';stateT=0;flapStart=t;lastInput=t;trailColor=m.color;setStatus('following the trail to '+m.name.toLowerCase())}
-    function puzzle(m){target=m;state='puzzled';stateT=0;lastInput=t;setStatus('hmm, new trail?')}
-    function zot(){state='zot';stateT=0;lastInput=t;setStatus('zot! zot! zot!')}
-function nap(){state='nap';stateT=0;setStatus('curled up for a nap')}
-function wake(){state='idle';stateT=0;lastInput=t;setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around')}
-function pet(){if(state==='routing'||state==='puzzled'||state==='lick')return;state='happy';stateT=0;lastInput=t;setStatus('happy wiggles');for(let i=0;i<3;i++)fx.push({kind:'heart',x:0.3+Math.random()*0.3,y:-0.35,vy:-0.25-Math.random()*0.1,life:1})}
+    // Reduced motion has no animation loop: each mood change draws one still frame, then settles back to idle.
+    let settleT=0;
+    function still(){if(reduce){update(0);render()}}
+    function settle(ms){if(!reduce)return;still();clearTimeout(settleT);settleT=setTimeout(()=>{if(state!=='nap'){state='idle';idleStatus()}levelUpAt=-9;fx=[];still()},ms)}
+function routeTo(m){target=m;state='routing';stateT=0;flapStart=t;lastInput=t;trailColor=m.color;setStatus('following the trail to '+m.name.toLowerCase());
+  if(reduce){state='happy';plate=' '+m.name.toUpperCase()+' ';setStatus('found '+m.name.toLowerCase()+'!');settle(2400)}}
+    function puzzle(m){if(reduce)return routeTo(m);target=m;state='puzzled';stateT=0;lastInput=t;setStatus('hmm, new trail?')}
+    function zot(){state='zot';stateT=reduce?2:0;lastInput=t;setStatus('zot! zot! zot!');settle(3000)}
+function nap(){state='nap';stateT=0;setStatus('curled up for a nap');still()}
+function wake(){state='idle';stateT=0;lastInput=t;setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around');still()}
+function pet(){if(state==='routing'||state==='puzzled'||state==='lick')return;state='happy';stateT=0;lastInput=t;setStatus('happy wiggles');for(let i=0;i<3;i++)fx.push({kind:'heart',x:0.3+Math.random()*0.3,y:-0.35,vy:-0.25-Math.random()*0.1,life:1});settle(2400)}
+    const busy=()=>state==='routing'||state==='lick'||state==='puzzled';
 function update(dt){
   t+=dt;stateT+=dt;
   if(state==='routing'&&stateT>1.8){state='lick';stateT=0;setStatus('snatching a '+target.fam+' ant off the trail…')}
@@ -246,11 +252,10 @@ function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt);r
 function start(){if(reduce){update(0.016);render();return}if(!rafId){last=performance.now();rafId=requestAnimationFrame(loop)}}
 function stop(){cancelAnimationFrame(rafId);rafId=0}
     function idleStatus(){setStatus(target?'hanging out at '+target.name.toLowerCase():'sniffing around')}
-    function relaunch(){state='idle';stateT=0;lastInput=t;start();setStatus('back and sniffing around')}
-    function levelUp(name){levelUpAt=t;levelUpName=name;for(let i=0;i<6;i++)fx.push({kind:'star',x:-0.6+Math.random()*1.4,y:-0.2+Math.random()*0.3,vy:-0.3,life:1,c:Math.random()<0.5?UGOLD:'#F59AB0'})}
-    function resetBelly(){belly={Claude:0,GPT:0,Gemini:0};saveBelly()}
+    function levelUp(name){levelUpAt=t;levelUpName=name;for(let i=0;i<6;i++)fx.push({kind:'star',x:-0.6+Math.random()*1.4,y:-0.2+Math.random()*0.3,vy:-0.3,life:1,c:Math.random()<0.5?UGOLD:'#F59AB0'});settle(2800)}
+    function resetBelly(){belly={Claude:0,GPT:0,Gemini:0};saveBelly();still()}
     fit();start();
-    return{routeTo,puzzle,queueEat,pet,zot,nap,wake,levelUp,resetBelly,belly:()=>({...belly}),fit,start,stop,relaunch,setStatus,idleStatus};
+    return{routeTo,puzzle,queueEat,pet,zot,nap,wake,levelUp,resetBelly,belly:()=>({...belly}),fit,start,stop,setStatus,idleStatus,busy,refresh:still};
   }
   A.mandu={createMandu};
 })(globalThis.AntRouter = globalThis.AntRouter || {});

@@ -7,15 +7,15 @@
   function cap(step,text){$('tourStep').textContent=step;$('tourCap').textContent=text}
   const top=()=>window.scrollTo({top:0,behavior:'smooth'});
   async function run(app){
-    if(touring)return;touring=true;abort=false;const saved=A.storage.snapshot();
+    if(touring)return;touring=true;abort=false;A.storage.beginSandbox();
     app.resetForTour();app.showTab('route');top();
-    $('tourbar').classList.add('on');$('tourBtn').disabled=true;
+    $('tourbar').classList.add('on');$('tourBtn').disabled=true;$('endBtn').disabled=true;
     const t0=performance.now();const tick=setInterval(()=>{const s=Math.min(60,(performance.now()-t0)/1000);$('tourProg').style.width=(s/60*100)+'%'},250);
     try{
       cap('0:00','Meet Mandu. You bring a prompt, he finds the right AI model. Watch the Core loop strip light up as we play.');await sleep(4200);
       cap('ASK','Step 1, Ask: type what you would normally ask ChatGPT, Claude or Gemini.');await sleep(700);
       await typeIn("What's the capital of Australia?");await sleep(500);app.doRoute();
-      cap('ROUTE','Step 2, Route: Mandu reads the prompt, follows the trail and snatches an ant in that model\'s colour.');await sleep(3800);
+      cap('ROUTE','Step 2, Route: Mandu reads the prompt, follows the trail and snatches an ant in that model\'s color.');await sleep(3800);
       cap('REVEAL','Step 3, Reveal: a quick fact goes to a fast, cheap model. The ant lands in his belly, and you earn XP and crumbs.');await sleep(3800);
       await typeIn('Fix this off-by-one bug in my Python loop');await sleep(300);app.doRoute();
       cap('REVEAL','A coding prompt gets a stronger model. The belly shows your split across Claude, GPT and Gemini.');await sleep(4200);
@@ -35,7 +35,9 @@
       cap('ZOT!','Fellow Anteaters: type zot.');app.clickPlat('Any app');await typeIn('zot');await sleep(3600);
       cap('LOOP','That is the loop: Ask, Route, Reveal, Steer, Learn, level up. Your turn!');app.showTab('route');await sleep(4200);
     }catch(e){}
-    clearInterval(tick);app.stopMandu();A.storage.restore(saved);location.reload();
+    clearInterval(tick);app.stopMandu();A.storage.endSandbox();
+    try{sessionStorage.setItem('antrouter-skip-launch','1')}catch(e){}
+    location.reload();
   }
   function stop(){abort=true;$('tourCap').textContent='Stopping…'}
   A.tour={run,stop};

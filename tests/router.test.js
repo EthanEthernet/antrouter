@@ -20,13 +20,13 @@ const BASELINE = [
  ['claude','Design the database schema for a ride-share app, handle edge cases','code','0.842','opus:100 sonnet:100 haiku:79',"You're in Claude and this is a hard code prompt, so it's worth Claude's strongest tier."],
  ['chatgpt','Fix this off-by-one bug in my Python loop','code','0.432','gpt:76 gptmini:58',"You're in ChatGPT and this is a demanding code prompt, so it's worth ChatGPT's strongest tier."],
  ['chatgpt',"What's the capital of Australia?",'fact','0.214','gptmini:58 gpt:52',"You're in ChatGPT and this simple quick fact prompt doesn't need more than its fastest, cheapest tier."],
- ['chatgpt','Write a short poem about finals week at UCI','creative','0.336','gpt:57 gptmini:41',"You're in ChatGPT and this is a demanding creative writing prompt, so it's worth ChatGPT's strongest tier."],
+ ['chatgpt','Write a short poem about finals week at UCI','creative','0.336','gpt:57 gptmini:41',"You're in ChatGPT; this creative writing prompt is simple, but ChatGPT's strongest tier is clearly better at it."],
  ['chatgpt','Compare fixed vs floating exchange rates for an emerging market, step by step','reason','0.684','gpt:100 gptmini:60',"You're in ChatGPT and this is a demanding reasoning & analysis prompt, so it's worth ChatGPT's strongest tier."],
  ['chatgpt','Summarize this 20-page article into key points','summarize','0.342','gptmini:58 gpt:57',"You're in ChatGPT and this simple summarizing prompt doesn't need more than its fastest, cheapest tier."],
  ['chatgpt','Design the database schema for a ride-share app, handle edge cases','code','0.842','gpt:100 gptmini:68',"You're in ChatGPT and this is a hard code prompt, so it's worth ChatGPT's strongest tier."],
  ['gemini','Fix this off-by-one bug in my Python loop','code','0.432','gpro:70 gflash:64',"You're in Gemini and this is a demanding code prompt, so it's worth Gemini's strongest tier."],
  ['gemini',"What's the capital of Australia?",'fact','0.214','gflash:68 gpro:57',"You're in Gemini and this simple quick fact prompt doesn't need more than its fastest, cheapest tier."],
- ['gemini','Write a short poem about finals week at UCI','creative','0.336','gpro:54 gflash:49',"You're in Gemini and this is a demanding creative writing prompt, so it's worth Gemini's strongest tier."],
+ ['gemini','Write a short poem about finals week at UCI','creative','0.336','gpro:54 gflash:49',"You're in Gemini; this creative writing prompt is simple, but Gemini's strongest tier is clearly better at it."],
  ['gemini','Compare fixed vs floating exchange rates for an emerging market, step by step','reason','0.684','gpro:93 gflash:67',"You're in Gemini and this is a demanding reasoning & analysis prompt, so it's worth Gemini's strongest tier."],
  ['gemini','Summarize this 20-page article into key points','summarize','0.342','gflash:83 gpro:73',"You're in Gemini and this simple summarizing prompt doesn't need more than its fastest, cheapest tier."],
  ['gemini','Design the database schema for a ride-share app, handle edge cases','code','0.842','gpro:96 gflash:75',"You're in Gemini and this is a hard code prompt, so it's worth Gemini's strongest tier."],
@@ -53,6 +53,11 @@ test('classify edge cases', () => {
     assert.equal(c.task, task, text);
     assert.equal(c.complexity.toFixed(3), cx, text);
   }
+});
+
+test('short creative prompts read as creative writing, not quick facts', () => {
+  for (const text of ['Write a haiku about the ocean', 'Tell me a joke', 'Two poems about rain', 'a limerick for my cat', 'Song lyrics for a breakup'])
+    assert.equal(router.classify(text).task, 'creative', text);
 });
 
 test('platform filter only returns that vendor', () => {

@@ -17,10 +17,10 @@ test('a fresh game starts as a level 1 Pup with nothing', () => {
 });
 
 test('saved progress loads on top of the defaults', () => {
-  const g = G.createGame(memStore({ prog: { xp: 50 } }));
+  const g = G.createGame(memStore({ prog: { xp: 85 } }));
   assert.equal(g.levelInfo().name, 'Forager');
   assert.equal(g.state().crumbs, 0);
-  assert.ok(Math.abs(g.levelInfo().progress - 1 / 6) < 1e-9);
+  assert.ok(Math.abs(g.levelInfo().progress - 0.25) < 1e-9);
 });
 
 test('first route pays route XP plus the First trail badge and saves', () => {
@@ -80,6 +80,57 @@ test('locked or unaffordable gear cannot be bought', () => {
   assert.equal(g.state().crumbs, 100);
   const poor = G.createGame(memStore({ prog: { crumbs: 5 } }));
   assert.equal(poor.buy('bow'), false);
+});
+
+test('max level takes about 30 plain routes, not 13', () => {
+  const g = G.createGame(memStore());
+  let n = 0;
+  while (g.levelInfo().next && n < 100) { g.routed('Claude', { platform: 'any', task: 'fact' }); n++; }
+  assert.ok(n >= 25, 'reached max level after only ' + n + ' routes');
+});
+
+test('only the first reroute of a result pays XP', () => {
+  const g = G.createGame(memStore());
+  g.routed('Claude', { platform: 'any', task: 'code' });
+  const xp = g.state().xp;
+  g.rerouted('GPT', { first: true, from: 'Claude' });
+  const afterFirst = g.state().xp;
+  assert.ok(afterFirst > xp);
+  for (let i = 0; i < 10; i++) g.rerouted(i % 2 ? 'GPT' : 'Claude', { first: false, from: i % 2 ? 'Claude' : 'GPT' });
+  assert.equal(g.state().xp, afterFirst);
+});
+
+test('a completed loop pays a small bonus', () => {
+  const g = G.createGame(memStore());
+  g.addLap();
+  assert.equal(g.state().laps, 1);
+  assert.equal(g.state().xp, 5);
+  assert.equal(g.state().crumbs, 3);
+});
+
+test('the session recap counts only this session', () => {
+  const g = G.createGame(memStore({ prog: { xp: 50, crumbs: 30, badges: ['zot'], laps: 2 } }));
+  g.startSession(1000);
+  g.routed('Claude', { platform: 'any', task: 'code' });
+  g.rerouted('GPT', { first: true, from: 'Claude' });
+  g.routed('Gemini', { platform: 'any', task: 'fact' });
+  g.ratedGood();
+  g.addLap();
+  g.buy('bow');
+  const s = g.sessionSummary(1000 + 95000);
+  assert.equal(s.ms, 95000);
+  assert.equal(s.routes, 2);
+  assert.equal(s.reroutes, 1);
+  assert.equal(s.goods, 1);
+  assert.equal(s.laps, 1);
+  assert.deepEqual(s.belly, { Claude: 0, GPT: 1, Gemini: 1 });
+  assert.equal(s.levelFrom, 'Pup');
+  assert.equal(s.levelTo, g.levelInfo().name);
+  assert.equal(s.xp, g.state().xp - 50);
+  assert.equal(s.spent, 10);
+  assert.equal(s.earned, g.state().crumbs - 30 + 10);
+  assert.ok(!s.badges.includes('Zot!'));
+  assert.ok(s.badges.includes('First trail'));
 });
 
 test('reset wipes progress and emits change', () => {

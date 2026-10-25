@@ -6,12 +6,23 @@
 <title>AntRouter: meet Mandu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Fredoka:wght@500..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
+<script src="src/storage.js"></script>
+<script src="src/theme.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><h1>AntRouter</h1><span class="hdr-stats" id="hdrStats"></span></header>
+  <header class="top"><h1>AntRouter</h1>
+    <div class="top-right">
+      <span class="hdr-stats" id="hdrStats"></span>
+      <button class="hdr-btn" data-sound>Sound: on</button>
+      <button class="hdr-btn" id="endBtn">End session</button>
+      <div class="theme-switch" role="radiogroup" aria-label="Color theme">
+        <button role="radio" data-theme-choice="system">System</button><button role="radio" data-theme-choice="light">Light</button><button role="radio" data-theme-choice="dark">Dark</button>
+      </div>
+    </div>
+  </header>
   <p class="sub">Type a prompt and Mandu the anteater picks the best model among Claude, GPT and Gemini, shows why, and learns from your reroutes. Fellow Anteaters: try typing <b>zot</b>.</p>
 
   <section class="card chat" aria-label="Ask Mandu">
@@ -38,12 +49,11 @@
   <div class="stage">
     <div class="side">
       <div class="term" id="term">
-        <div class="bar"><button class="wb red" id="wQuit" aria-label="Quit Mandu" title="Quit">×</button><button class="wb yellow" id="wMin" aria-label="Minimize" title="Minimize">−</button><button class="wb green" id="wMax" aria-label="Expand" title="Expand">+</button><span id="status">mandu — sniffing around</span></div>
+        <div class="bar"><button class="wb red" id="wQuit" aria-label="End session" title="End session">×</button><button class="wb yellow" id="wMin" aria-label="Minimize" title="Minimize">−</button><button class="wb green" id="wMax" aria-label="Expand" title="Expand">+</button><span id="status">mandu — sniffing around</span></div>
         <pre id="screen" role="img" aria-label="Animated ASCII anteater mascot named Mandu. Ants in its belly show how many prompts went to Claude, GPT and Gemini."></pre>
-        <div class="exited">$ mandu --quit<br>[process exited] Mandu curled up and went home.<br><button id="wRelaunch">$ mandu --start</button></div>
       </div>
       <div class="mood">
-        <button id="zot" style="border-color:#FFD200;color:#FFD200">Zot!</button><button id="pet">Pet Mandu</button><button id="nap">Nap</button><button id="wake">Wake up</button>
+        <button id="zot" class="zot">Zot!</button><button id="pet">Pet Mandu</button><button id="nap">Nap</button><button id="wake">Wake up</button>
       </div>
     </div>
 
@@ -62,7 +72,7 @@
       <section class="panel" role="tabpanel" id="panel-trails" aria-labelledby="tab-trails" tabindex="0" hidden>
         <div class="card">
           <b class="cardtitle">Mandu's belly</b>
-          <div class="meta">Every routed prompt becomes an ant in its model's colour.</div>
+          <div class="meta">Every routed prompt becomes an ant in its model's color.</div>
           <div class="chips" id="bellySplit" style="margin-top:10px"></div>
         </div>
         <div class="card">
@@ -117,8 +127,36 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
+
+<div class="screen" id="launch" role="dialog" aria-modal="true" aria-labelledby="launchTitle" hidden>
+  <div class="screen-card">
+    <div class="screen-term term"><pre aria-hidden="true"></pre></div>
+    <h2 class="screen-title" id="launchTitle">AntRouter</h2>
+    <p class="screen-tag">You bring the prompt. Mandu finds the trail.</p>
+    <p class="meta" id="launchSave"></p>
+    <div class="screen-actions"><button class="go" id="launchStart">Start</button><button id="launchTour">▶ 1-minute tour</button><button id="launchNew" hidden>New game</button></div>
+    <ol class="howto">
+      <li><b>1 Ask</b>Type what you'd ask Claude, ChatGPT or Gemini.</li>
+      <li><b>2 Route</b>Mandu sniffs out the best model and swallows an ant in its color.</li>
+      <li><b>3 Steer</b>Agree with Good route or pick another model. Mandu learns either way.</li>
+    </ol>
+    <div class="screen-foot"><button class="hdr-btn" data-sound>Sound: on</button><span class="meta">Progress saves in this browser.</span></div>
+  </div>
+</div>
+
+<div class="screen" id="exit" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
+  <div class="screen-card">
+    <div class="screen-term term"><pre aria-hidden="true"></pre></div>
+    <h2 class="screen-title" id="exitTitle">Session over</h2>
+    <p class="screen-tag">Mandu curled up and went home. Here's how the trail went.</p>
+    <dl class="recap" id="recap"></dl>
+    <p class="meta" id="recapNote"></p>
+    <div class="screen-actions"><button class="go" id="exitResume">Keep playing</button><button id="exitBack">Back to title</button></div>
+    <div class="screen-foot"><span class="meta">Your progress is saved. Close the tab whenever you like.</span></div>
+  </div>
+</div>
 <script src="src/models.js"></script>
-<script src="src/storage.js"></script>
+<script src="src/audio.js"></script>
 <script src="src/router.js"></script>
 <script src="src/game.js"></script>
 <script src="src/mandu.js"></script>
