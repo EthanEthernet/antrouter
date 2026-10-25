@@ -163,8 +163,14 @@
     const fav=tot?FAMILIES.slice().sort((x,y)=>b[y]-b[x])[0]:null;
     $('recapNote').innerHTML=(tot?`Favorite trail today: <b>${fav}</b>, ${Math.round(b[fav]/tot*100)}% of ${tot} ant${tot===1?'':'s'}.`:"Nothing routed this session, so Mandu is still hungry.")
       +(s.badges.length?' New badges: '+s.badges.map(esc).join(', ')+'.':'');
-    sfx.play('end');openScreen('exit');$('exitResume').focus()}
-  function renderSound(){document.querySelectorAll('[data-sound]').forEach(b=>{b.textContent='Sound: '+(sfx.muted()?'off':'on')})}
+    sfx.play('end');music.pause();openScreen('exit');$('exitResume').focus()}
+  function renderSound(){document.querySelectorAll('[data-sound]').forEach(b=>{b.textContent='Effects: '+(sfx.muted()?'off':'on')})}
+  // Background music ("Carefree" by Kevin MacLeod, CC BY 4.0). Off by default; the choice is saved and Start resumes it.
+  const music=$('bgMusic');music.volume=0.2;
+  let musicOn=!!S.get('music',false);
+  function renderMusic(){document.querySelectorAll('[data-music]').forEach(b=>{b.textContent='Music: '+(musicOn?'on':'off');b.setAttribute('aria-pressed',musicOn)})}
+  function playMusic(){if(!musicOn)return;music.play().catch(()=>{musicOn=false;renderMusic();toast("Music couldn't start. Check that Carefree.mp3 sits next to index.html.")})}
+  function toggleMusic(){musicOn=!musicOn;S.set('music',musicOn);renderMusic();if(musicOn)playMusic();else music.pause()}
 
   // ---- tour hooks ----
   function resetForTour(){bias={};ledger={routes:0,reroutes:0,spent:0,flag:0};mandu.resetBelly();game.reset();loopReset();
@@ -191,16 +197,17 @@
   $('tourBtn').onclick=()=>A.tour.run({stopMandu:()=>mandu.stop(),resetForTour,doRoute,showTab,clickPlat,game});
   $('tourStop').onclick=()=>A.tour.stop();
   document.querySelectorAll('[data-sound]').forEach(b=>b.onclick=()=>{sfx.setMuted(!sfx.muted());renderSound();sfx.play('tap')});
-  $('launchStart').onclick=()=>{game.startSession();sfx.play('start');screenMandu.wake();setTimeout(closeScreen,reduce?0:450)};
+  document.querySelectorAll('[data-music]').forEach(b=>b.onclick=toggleMusic);
+  $('launchStart').onclick=()=>{game.startSession();sfx.play('start');playMusic();screenMandu.wake();setTimeout(closeScreen,reduce?0:450)};
   $('launchTour').onclick=()=>{closeScreen();$('tourBtn').click()};
   $('launchNew').onclick=()=>armed($('launchNew'),()=>{game.reset();resetTrails();loopReset();showLaunch()});
-  $('exitResume').onclick=()=>{sfx.play('tap');closeScreen()};
+  $('exitResume').onclick=()=>{sfx.play('tap');closeScreen();playMusic()};
   $('exitBack').onclick=()=>{sfx.play('tap');showLaunch()};
 
   // ---- first paint ----
   const saved=S.get('tab','route');
   showTab(TABS.includes(saved)?saved:'route');
-  renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();
+  renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();renderMusic();
   // The extension popup and the reload after the tour skip the title screen.
   let skipLaunch=POPUP;try{if(sessionStorage.getItem('antrouter-skip-launch')){sessionStorage.removeItem('antrouter-skip-launch');skipLaunch=true}}catch(e){}
   if(!skipLaunch)showLaunch();

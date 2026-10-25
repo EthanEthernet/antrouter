@@ -31,7 +31,8 @@ Built as a course prototype at UC Irvine.
 | **Levels, badges, shop** | XP levels Mandu from Pup to Trailblazer (60 / 160 / 300 XP). Crumbs buy a party hat, UCI bandana, shades, tail bow and golden trail. |
 | **Care and play** | Pet him, let him nap, type `zot`, or use the terminal lights to expand or minimize. |
 | **Exit screen** | End session (or the red terminal light) shows a recap of this session: time, routes, loops, reroutes, XP, crumbs, level change, new badges and favorite trail. Then keep playing or go back to the title. |
-| **Sound** | Short synthesized effects for routing, the gulp, rerouting, Good route, quests, badges, level-ups, the shop and zot. No audio files. Starts on your first click and the mute choice is saved. |
+| **Sound** | Short synthesized effects for routing, the gulp, rerouting, Good route, quests, badges, level-ups (Darren's C-E-G-C chime), the shop and zot. Starts on your first click and the mute choice is saved. |
+| **Music** | Optional background music, "Carefree" by Kevin MacLeod ([incompetech.com](https://incompetech.com), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Off by default; once turned on it resumes when you press Start and pauses on the exit screen. |
 
 **Saving (the "database"):** everything runs in the browser. Trails, belly, XP, crumbs, gear, theme and mute are saved in `localStorage` under `antrouter:` keys, so nothing leaves your machine and progress survives reloads. The extension popup keeps its own save. The tour plays on a sandbox copy and puts your save back afterwards, even if the tab closes mid-tour.
 
@@ -41,6 +42,7 @@ Built as a course prototype at UC Irvine.
 index.html                         the app page (website and extension popup)
 manifest.json                      Chrome extension manifest (popup = index.html?popup)
 css/app.css                        all styles, including the compact popup layout
+Carefree.mp3                       background music (Kevin MacLeod, CC BY 4.0)
 src/models.js                      the 7 models, platforms and hand-off links
 src/storage.js                     localStorage helpers (antrouter: keys) and the tour's sandbox backup
 src/audio.js                       synthesized sound effects and mute

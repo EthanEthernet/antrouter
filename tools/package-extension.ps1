@@ -5,7 +5,7 @@ $dist = Join-Path $root 'dist'
 $stage = Join-Path $dist 'antrouter-extension'
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 New-Item -ItemType Directory -Force $stage | Out-Null
-foreach ($p in 'manifest.json', 'index.html', 'css', 'src', 'icons') { Copy-Item -Recurse (Join-Path $root $p) $stage }
+foreach ($p in 'manifest.json', 'index.html', 'Carefree.mp3', 'css', 'src', 'icons') { Copy-Item -Recurse (Join-Path $root $p) $stage }
 $zip = Join-Path $dist 'antrouter-extension.zip'
 if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip

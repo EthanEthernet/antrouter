@@ -10,7 +10,8 @@
     good:[n(660,0,.1,{vol:.12}),n(990,.09,.16,{vol:.12})],
     hmm:[n(440,0,.14,{type:'triangle',slide:330,vol:.12}),n(330,.15,.18,{type:'triangle',slide:494,vol:.12})],
     coin:[n(988,0,.07,{type:'square',vol:.05}),n(1319,.07,.24,{type:'square',vol:.05})],
-    levelup:[n(523,0,.14,{type:'triangle'}),n(659,.09,.14,{type:'triangle'}),n(784,.18,.14,{type:'triangle'}),n(1047,.27,.32,{type:'triangle'})],
+    // Darren's C-E-G-C level-up chime (PR #2)
+    levelup:[n(523.25,0,.28,{vol:.07}),n(659.25,.1,.28,{vol:.07}),n(783.99,.2,.28,{vol:.07}),n(1046.5,.3,.28,{vol:.07})],
     quest:[n(784,0,.1,{vol:.12}),n(1047,.1,.22,{vol:.12})],
     badge:[n(1319,0,.07,{vol:.08}),n(1568,.06,.07,{vol:.08}),n(2093,.12,.18,{vol:.07})],
     zot:[n(587,0,.1,{type:'sawtooth',vol:.06}),n(587,.17,.1,{type:'sawtooth',vol:.06}),n(587,.34,.1,{type:'sawtooth',vol:.06}),n(880,.52,.3,{type:'square',vol:.06})],
