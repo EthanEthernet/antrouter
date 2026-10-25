@@ -50,13 +50,14 @@
       quest('fam',prog.fams.length,true);if(prog.fams.length>=3)badge('tri')}
     function ratedGood(){session.goods++;award(5,3);quest('good');badge('good')}
     function zotted(){quest('zot');badge('zot')}
-    function buy(id){const it=SHOP.find(x=>x.id===id);if(!it||prog.owned.includes(id)||lvlIndex(prog.xp)+1<it.lvl||prog.crumbs<it.cost)return false;
+    function canBuy(id){const it=SHOP.find(x=>x.id===id);return!!it&&!prog.owned.includes(id)&&lvlIndex(prog.xp)+1>=it.lvl&&prog.crumbs>=it.cost}
+    function buy(id){const it=SHOP.find(x=>x.id===id);if(!canBuy(id))return false;
       prog.crumbs-=it.cost;session.spent+=it.cost;prog.owned.push(id);prog.worn[id]=true;save();quest('gear');badge('dress');return true}
     function toggleWear(id){if(!prog.owned.includes(id))return false;prog.worn[id]=!prog.worn[id];save();quest('gear');return prog.worn[id]}
     const wearing=id=>!!prog.worn[id];
     function addLap(){prog.laps++;award(5,3)}
     function reset(){prog=freshProg();session=snap();save()}
-    return{on,state:()=>prog,levelInfo,wearing,routed,rerouted,ratedGood,zotted,buy,toggleWear,addLap,reset,startSession,sessionSummary};
+    return{on,state:()=>prog,levelInfo,wearing,routed,rerouted,ratedGood,zotted,canBuy,buy,toggleWear,addLap,reset,startSession,sessionSummary};
   }
   A.game={createGame,LEVELS,SHOP,BADGES,QUESTS};
 })(globalThis.AntRouter = globalThis.AntRouter || {});

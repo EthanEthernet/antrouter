@@ -76,9 +76,12 @@ test('buying gear spends crumbs, wears it and earns Dressed up', () => {
 
 test('locked or unaffordable gear cannot be bought', () => {
   const g = G.createGame(memStore({ prog: { crumbs: 100 } }));
+  assert.equal(g.canBuy('bandana'), false);
+  assert.equal(g.canBuy('bow'), true);
   assert.equal(g.buy('bandana'), false);
   assert.equal(g.state().crumbs, 100);
   const poor = G.createGame(memStore({ prog: { crumbs: 5 } }));
+  assert.equal(poor.canBuy('bow'), false);
   assert.equal(poor.buy('bow'), false);
 });
 
