@@ -600,7 +600,7 @@ function renderQuests(){$('qdone').textContent=prog.qdone+' quest'+(prog.qdone==
     return `<div class="q${newQ===q.id?' new':''}"><b>${Q.t}</b><div class="qbar"><span style="width:${pct}%"></span></div><div class="meta"><span>${Math.min(q.n,Q.goal)} / ${Q.goal}</span><span>+${Q.rw} crumbs</span></div></div>`}).join('');newQ=null}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),2600)}
 function award(xp,cr){const before=lvlIndex(prog.xp);prog.xp+=xp;prog.crumbs+=cr;const after=lvlIndex(prog.xp);saveProg();
-  if(after>before){levelUpAt=t;levelUpName=LEVELS[after].n;for(let i=0;i<6;i++)fx.push({kind:'star',x:-0.6+Math.random()*1.4,y:-0.2+Math.random()*0.3,vy:-0.3,life:1,c:Math.random()<0.5?UGOLD:'#F59AB0'});
+  if(after>before){window.playLevelUpSound?.();levelUpAt=t;levelUpName=LEVELS[after].n;for(let i=0;i<6;i++)fx.push({kind:'star',x:-0.6+Math.random()*1.4,y:-0.2+Math.random()*0.3,vy:-0.3,life:1,c:Math.random()<0.5?UGOLD:'#F59AB0'});
     const unl=SHOP.filter(s=>s.lvl===after+1).map(s=>s.name).join(', ');toast('Level up! Mandu is now a '+LEVELS[after].n+(unl?'. New in the shop: '+unl:''))}
   renderProg()}
 function badge(id){if(prog.badges.includes(id))return;prog.badges.push(id);const b=BADGES.find(x=>x.id===id);award(15,10);toast('Badge: '+b.n+'  +10 crumbs')}
@@ -729,5 +729,92 @@ shadeEl.onclick=()=>setMax(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&term.classList.contains('max'))setMax(false)});
 })();
 </script>
+
+<!-- Background music -->
+<audio id="bgMusic" src="./Carefree.mp3" loop preload="none"></audio>
+<button id="musicToggle" type="button" aria-label="Play background music" aria-pressed="false"
+ style="position:fixed;right:18px;bottom:18px;z-index:80;background:var(--bg);box-shadow:0 4px 16px #0003">♪ Music: Off</button>
+<p style="margin:0 22px 80px;text-align:center;font-size:12px;color:var(--muted)">
+ Music: <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400037" style="color:inherit">Carefree</a>
+ by Kevin MacLeod (<a href="https://incompetech.com" style="color:inherit">incompetech.com</a>).
+ Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" style="color:inherit">CC BY 4.0</a>.
+</p>
+<script>
+(() => {
+  const music = document.getElementById('bgMusic');
+  const button = document.getElementById('musicToggle');
+  music.volume = 0.2;
+  function updateButton() {
+    const playing = !music.paused;
+    button.textContent = playing ? '♪ Music: On' : '♪ Music: Off';
+    button.setAttribute('aria-pressed', String(playing));
+    button.setAttribute('aria-label', playing ? 'Pause background music' : 'Play background music');
+  }
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      if (music.paused) await music.play();
+      else music.pause();
+    } catch (error) {
+      alert('Music could not play. Please check that Carefree.mp3 is in the same folder as index.html.');
+    } finally {
+      button.disabled = false;
+      updateButton();
+    }
+  });
+  music.addEventListener('play', updateButton);
+  music.addEventListener('pause', updateButton);
+})();
+</script>
+
+
+<button id="sfxToggle" type="button" aria-label="Mute sound effects" aria-pressed="true"
+ style="position:fixed;right:18px;bottom:70px;z-index:80;background:var(--bg);box-shadow:0 4px 16px #0003">♫ SFX: On</button>
+<script>
+(() => {
+  let context;
+  let enabled = true;
+  const button = document.getElementById('sfxToggle');
+  function unlockSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      if (!context) context = new AudioContext();
+      if (context.state === 'suspended') context.resume().catch(() => {});
+    } catch (error) {}
+  }
+  document.addEventListener('pointerdown', unlockSound);
+  document.addEventListener('keydown', unlockSound);
+  button.addEventListener('click', () => {
+    enabled = !enabled;
+    button.textContent = enabled ? '♫ SFX: On' : '♫ SFX: Off';
+    button.setAttribute('aria-pressed', String(enabled));
+    button.setAttribute('aria-label', enabled ? 'Mute sound effects' : 'Enable sound effects');
+  });
+  window.playLevelUpSound = () => {
+    if (!enabled) return;
+    unlockSound();
+    if (!context || context.state !== 'running') return;
+    // A short C-E-G-C chime, synthesized locally without an audio file.
+    const start = context.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((frequency, i) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const at = start + i * 0.10;
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(0.07, at + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, at + 0.28);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(at);
+      oscillator.stop(at + 0.30);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    });
+  };
+})();
+</script>
+
 </body>
 </html>
