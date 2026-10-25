@@ -10,7 +10,7 @@ Built as a course prototype at UC Irvine.
 
 ## Try it
 
-- **Original prototype (single file):** https://claude.ai/artifact/QukhYtx9aMp2BWc4KP9tMR
+- **Original prototype (single file):**  https://ethanethernet.github.io/antrouter/
 - **Run locally:** double-click `index.html`. No build step, no install, no API key.
 - **Chrome extension:** open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick this folder. Click the AntRouter icon in the toolbar to open Mandu in a popup. Progress in the popup is saved separately from the website.
 - **Watch the loop:** press **▶ 1-minute tour** on the website, or play [`media/antrouter-1min-tour.mp4`](media/antrouter-1min-tour.mp4).
