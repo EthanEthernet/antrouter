@@ -64,9 +64,50 @@ test('reduced motion still redraws when Mandu routes, cheers and naps', () => {
 test('busy while following a trail, so a second route has to wait', () => {
   globalThis.requestAnimationFrame = () => 1; globalThis.cancelAnimationFrame = () => {};
   const { m } = make({}, { reduce: false });
-  m.stop();
   m.routeTo(globalThis.AntRouter.models.MODELS[0]);
   assert.equal(m.busy(), true);
+  m.stop();
+});
+
+test('loadBelly picks up a belly restored behind Mandu\'s back', () => {
+  const { m, store, screen } = make({ belly: { Claude: 1, GPT: 0, Gemini: 0 } });
+  store.set('belly', { Claude: 0, GPT: 2, Gemini: 2 });
+  m.loadBelly();
+  assert.deepEqual(m.belly(), { Claude: 0, GPT: 2, Gemini: 2 });
+  assert.match(text(screen), /GPT 50%/);
+});
+
+test('calm mode holds the idle frame still', () => {
+  let cb = null;
+  globalThis.requestAnimationFrame = f => { cb = f; return 1 }; globalThis.cancelAnimationFrame = () => {};
+  const { m, screen } = make({}, { reduce: false, calm: true });
+  let now = performance.now();
+  for (let i = 0; i < 60; i++) { now += 50; cb(now) }   // ~3s: settles after 0.6s
+  const a = screen.innerHTML;
+  for (let i = 0; i < 40; i++) { now += 50; cb(now) }
+  assert.equal(screen.innerHTML, a);
+  m.setCalm(false);
+  for (let i = 0; i < 40; i++) { now += 50; cb(now) }
+  assert.notEqual(screen.innerHTML, a);
+  m.stop();
+});
+
+test('stopping mid-trail (hidden, minimized) lands the route instead of staying busy', () => {
+  globalThis.requestAnimationFrame = () => 1; globalThis.cancelAnimationFrame = () => {};
+  let landed = 0;
+  const { m } = make({}, { reduce: false, onLanded: () => landed++ });
+  m.routeTo(globalThis.AntRouter.models.MODELS[0]);
+  m.queueEat('Claude');
+  m.stop();
+  assert.equal(m.busy(), false);
+  assert.equal(landed, 1);
+  assert.deepEqual(m.belly(), { Claude: 1, GPT: 0, Gemini: 0 });
+  m.stop();
+  assert.equal(landed, 1);
+  m.routeTo(globalThis.AntRouter.models.MODELS[3]);   // routed while stopped
+  m.queueEat('GPT');
+  assert.equal(m.busy(), false);
+  assert.deepEqual(m.belly(), { Claude: 1, GPT: 1, Gemini: 0 });
 });
 
 test('status line keeps the mandu prefix', () => {

@@ -67,9 +67,48 @@ test('platform filter only returns that vendor', () => {
 });
 
 test('learned bias reorders the ranking but not the reason', () => {
-  const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', { code: { gpt: 0.08, sonnet: -0.04 } });
+  const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', { 'code:medium': { gpt: 0.08, sonnet: -0.04 } });
   assert.equal(ranking(d), 'gpt:84 sonnet:80 opus:77 gpro:70 haiku:64 gflash:64 gptmini:58');
   assert.equal(d.reason, 'Claude Sonnet is the strongest fit for code at this difficulty.');
+});
+
+test('learning is per task and difficulty: an easy-code trail leaves hard code alone', () => {
+  const easy = router.decide('Fix this off-by-one bug in my Python loop', 'any', {});
+  assert.equal(easy.key, 'code:medium');
+  const hard = router.decide('Design the database schema for a ride-share app, handle edge cases', 'any', { 'code:medium': { haiku: 0.4 } });
+  assert.equal(hard.key, 'code:hard');
+  assert.equal(hard.order[0].id, 'opus');
+  assert.equal(router.trailKey('fact', 0.2), 'fact:easy');
+  assert.equal(router.trailLabel('code:hard'), 'hard code');
+  assert.deepEqual(router.migrateBias({ code: { gpt: 0.1 }, 'fact:easy': { haiku: 0.08 }, 'nope:easy': {} }), { 'fact:easy': { haiku: 0.08 } });
+});
+
+test('mixed keyword signals are flagged and lower confidence', () => {
+  const d = router.decide('why is my Python loop slow', 'any', {});
+  assert.equal(d.task, 'code');
+  assert.equal(d.alt, 'reason');
+  assert.equal(d.confidence.level, 'close');
+  const clear = router.decide('Design the database schema for a ride-share app, handle edge cases', 'claude', {});
+  assert.equal(clear.alt, null);
+});
+
+test('confidence comes from the gap between the top two picks', () => {
+  assert.equal(router.decide("What's the capital of Australia?", 'any', {}).confidence.level, 'likely');
+  assert.equal(router.decide('Compare fixed vs floating exchange rates for an emerging market, step by step', 'any', {}).confidence.level, 'close');
+  assert.equal(router.decide("What's the capital of Australia?", 'chatgpt', {}).confidence.level, 'likely');
+  const c = router.decide('Fix this off-by-one bug in my Python loop', 'any', {}).confidence;
+  assert.equal(c.margin, 7);
+});
+
+test('second opinion explains the runner-up against the pick', () => {
+  const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', {});
+  const s = router.secondOpinion(d, d.order[0], d.order[1]);
+  assert.equal(s, "Claude Opus scored 77 to Claude Sonnet's 84. It's better at code, while Claude Sonnet is faster and cheaper.");
+});
+
+test('priority weights change the pick: caring only about cost picks the cheapest model', () => {
+  const d = router.decide('Design the database schema for a ride-share app, handle edge cases', 'any', {}, { Q: 0, S: 0, C: 1 });
+  assert.equal(d.order[0].id, 'gflash');
 });
 
 test('nudge accumulates and clamps to -0.3..0.4', () => {

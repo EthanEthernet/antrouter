@@ -16,22 +16,27 @@
   <header class="top"><h1>AntRouter</h1>
     <div class="top-right">
       <span class="hdr-stats" id="hdrStats"></span>
-      <button class="hdr-btn" data-music aria-pressed="false">Music: off</button>
-      <button class="hdr-btn" data-sound>Effects: on</button>
+      <button class="hdr-btn" id="settingsBtn" aria-haspopup="dialog">Settings</button>
       <button class="hdr-btn" id="endBtn">End session</button>
       <div class="theme-switch" role="radiogroup" aria-label="Color theme">
         <button role="radio" data-theme-choice="system">System</button><button role="radio" data-theme-choice="light">Light</button><button role="radio" data-theme-choice="dark">Dark</button>
       </div>
     </div>
   </header>
-  <p class="sub">Type a prompt and Mandu the anteater picks the best model among Claude, GPT and Gemini, shows why, and learns from your reroutes. Fellow Anteaters: try typing <b>zot</b>.</p>
+  <p class="sub">Type a prompt and Mandu the anteater picks the best model among Claude, GPT and Gemini, shows why and how sure, and learns from your reroutes. Fellow Anteaters: try typing <b>zot</b>.</p>
 
   <section class="card chat" aria-label="Ask Mandu">
     <div class="plat" id="plat"><span class="meta">Mandu is working in:</span></div>
     <label for="prompt" style="font-weight:600">Your prompt</label>
-    <textarea id="prompt" placeholder="Ask anything. Mandu will sniff out whether Claude, GPT or Gemini should take it."></textarea>
+    <textarea id="prompt" aria-describedby="kbdHint" placeholder="Ask anything. Mandu will sniff out whether Claude, GPT or Gemini should take it."></textarea>
     <div class="samples" id="samples"></div>
-    <div class="open"><button class="go" id="go">Route prompt</button><span class="meta" id="engine">Router: Mandu's trail map (runs in your browser)</span></div>
+    <div class="open"><button class="go" id="go">Route prompt</button><span class="meta" id="kbdHint">or press <kbd id="kbdMod">Ctrl</kbd> + <kbd>Enter</kbd> in the box</span></div>
+    <div class="dials" id="dials" hidden>
+      <b class="dials-title">Your priorities <span class="meta">(Trailblazer unlock)</span></b>
+      <div class="dial"><label for="dialQ">Quality <output id="dialQOut"></output></label><input type="range" id="dialQ" min="0" max="10"></div>
+      <div class="dial"><label for="dialS">Speed <output id="dialSOut"></output></label><input type="range" id="dialS" min="0" max="10"></div>
+      <div class="dial"><label for="dialC">Low cost <output id="dialCOut"></output></label><input type="range" id="dialC" min="0" max="10"></div>
+    </div>
   </section>
 
   <div class="tabbar">
@@ -44,18 +49,19 @@
     </div>
     <button class="tourbtn" id="tourBtn">▶ 1-minute tour</button>
   </div>
-  <div class="tourbar" id="tourbar" role="status" aria-live="polite"><span class="step" id="tourStep">0:00</span><p id="tourCap"></p><button id="tourStop">Stop tour</button><span class="tprog" id="tourProg"></span></div>
+  <div class="tourbar" id="tourbar" role="status" aria-live="polite"><span class="step" id="tourStep">0:00</span><p id="tourCap"></p><button id="tourPause" aria-pressed="false">Pause</button><button id="tourNext">Next</button><button id="tourStop">Stop tour</button><span class="tprog" id="tourProg"></span></div>
   <div class="shade" id="shade"></div>
 
   <div class="stage">
-    <div class="side">
+    <div class="side" id="side">
       <div class="term" id="term">
-        <div class="bar"><button class="wb red" id="wQuit" aria-label="End session" title="End session">×</button><button class="wb yellow" id="wMin" aria-label="Minimize" title="Minimize">−</button><button class="wb green" id="wMax" aria-label="Expand" title="Expand">+</button><span id="status">mandu — sniffing around</span></div>
+        <div class="bar"><button class="wb red" id="wQuit" aria-label="Hide Mandu" title="Hide Mandu">×</button><button class="wb yellow" id="wMin" aria-label="Minimize" title="Minimize">−</button><button class="wb green" id="wMax" aria-label="Expand" title="Expand">+</button><span id="status">mandu — sniffing around</span></div>
         <pre id="screen" role="img" aria-label="Animated ASCII anteater mascot named Mandu. Ants in its belly show how many prompts went to Claude, GPT and Gemini."></pre>
       </div>
       <div class="mood">
         <button id="zot" class="zot">Zot!</button><button id="pet">Pet Mandu</button><button id="nap">Nap</button><button id="wake">Wake up</button>
       </div>
+      <button class="back" id="wBack">Bring Mandu back</button>
     </div>
 
     <div class="panels">
@@ -78,6 +84,7 @@
         </div>
         <div class="card">
           <b class="cardtitle">Your trails</b>
+          <div class="meta">A trail is what Mandu has learned about which model you prefer, for one kind of prompt at one difficulty. Rerouting strengthens it.</div>
           <div id="learned" class="meta" style="margin-top:8px"></div>
         </div>
       </section>
@@ -88,8 +95,9 @@
           <div class="lvl"><b id="lvName">Lv1 Pup</b><span class="meta" id="lvNext"></span></div>
           <div class="xpbar"><span id="xpFill" style="width:0%"></span></div>
           <div class="meta" id="xpText"></div>
+          <ul class="unlocks" id="unlocks"></ul>
           <div style="margin-top:12px" class="crumbs" id="crumbs">0 crumbs</div>
-          <div class="meta" style="margin-top:4px">Earn crumbs by routing (+5), rerouting (+2), marking a good route (+3) and unlocking badges (+10).</div>
+          <div class="meta" style="margin-top:4px">Crumbs are points. You earn the most XP and crumbs by deciding: Good route (+10 XP), rerouting (+10 XP), opening the pick (+5 XP) and finishing a loop (+5 XP). Routing alone pays +4 XP. Spend crumbs on gear, second opinions or forgetting a trail.</div>
           <div class="badges" id="badges"></div>
         </div>
         <div class="card">
@@ -102,7 +110,7 @@
       <section class="panel" role="tabpanel" id="panel-shop" aria-labelledby="tab-shop" tabindex="0" hidden>
         <div class="card">
           <b class="cardtitle">Mandu's shop</b>
-          <div class="meta">Spend crumbs on gear. Higher levels unlock more items.</div>
+          <div class="meta">Spend crumbs on gear. Higher levels unlock more items. Crumbs also buy a second opinion on a pick (Route tab) or forget a trail (Trails tab).</div>
           <div class="shop" id="shop"></div>
           <button id="resetProg" style="margin-top:12px;padding:7px 12px;font-size:13px">Reset level, crumbs and gear</button>
         </div>
@@ -112,11 +120,22 @@
         <div class="brief">
           <p class="lede">Meet Mandu, a small anteater drawn entirely in text characters. Mandu follows ant trails, and in AntRouter every trail leads a prompt to the right model. Tell Mandu which app you're in and it picks the right tier inside Claude, ChatGPT or Gemini.</p>
         </div>
+        <div class="brief">
+          <h2>Words Mandu uses</h2>
+          <dl class="glossary">
+            <dt>Trail</dt><dd>What Mandu has learned about which model you prefer for a kind of prompt. Rerouting makes it stronger.</dd>
+            <dt>Crumbs</dt><dd>Points you earn by playing and spend in the shop, on second opinions or on forgetting a trail.</dd>
+            <dt>Snatch</dt><dd>Mandu's tongue grabbing an ant in the chosen model's color: the moment the pick is made.</dd>
+            <dt>Belly</dt><dd>The see-through stomach. Each ant is one routed prompt, so it shows your Claude / GPT / Gemini split.</dd>
+            <dt>Close call</dt><dd>The top two models scored within a few points, or the prompt's keywords pointed two ways.</dd>
+            <dt>Zot</dt><dd>UC Irvine's anteater cheer. Typing it makes Mandu dance; you can turn that off in Settings.</dd>
+          </dl>
+        </div>
         <div class="states">
           <div><h3>Sniffing</h3><p>Gentle bob, swishy tail, wiggly snout, the odd tongue flick. Eyes follow your cursor.</p></div>
           <div><h3>Following the trail</h3><p>Ants in the model's color march ahead, Mandu trots after them, and the trail sign flips to the destination.</p></div>
-          <div><h3>Found it</h3><p>Happy squint, blushing cheeks, tongue out, a few floating hearts.</p></div>
-          <div><h3>Rerouted and napping</h3><p>A head tilt and a question mark when you overrule it. Left alone, it curls its tail and dozes.</p></div>
+          <div><h3>Found it</h3><p>Happy squint, blushing cheeks, tongue out, a few floating hearts. The status line says how sure the pick is.</p></div>
+          <div><h3>Rerouted and napping</h3><p>A head tilt and a question mark when you overrule it. Left alone, it curls its tail and dozes. Calm mode keeps it still.</p></div>
         </div>
         <div class="brief">
           <h2>Why an anteater</h2>
@@ -131,6 +150,22 @@
 </div>
 <audio id="bgMusic" src="Carefree.mp3" loop preload="none"></audio>
 
+<dialog id="settings" aria-labelledby="setTitle">
+  <form method="dialog" class="settings">
+    <h2 id="setTitle">Settings</h2>
+    <label class="setrow"><input type="checkbox" id="setCalm"><span><b>Calm mode</b><span class="meta">Mandu stays still between routes, with fewer pop-ups, only key sounds and no zot shortcut.</span></span></label>
+    <label class="setrow"><input type="checkbox" id="setZot"><span><b>Zot shortcut</b><span class="meta">Typing z-o-t makes Mandu cheer.</span></span></label>
+    <div class="setrow vol"><label for="setMusic"><b>Music volume</b></label><input type="range" id="setMusic" min="0" max="100" step="5"><output id="setMusicOut"></output></div>
+    <div class="setrow vol"><label for="setSfx"><b>Effects volume</b></label><input type="range" id="setSfx" min="0" max="100" step="5"><output id="setSfxOut"></output></div>
+    <h3>Move your save</h3>
+    <p class="meta">The website and the Chrome extension keep separate saves. Copy your save code on one and load it on the other.</p>
+    <textarea id="saveCode" rows="3" spellcheck="false" aria-label="Save code"></textarea>
+    <div class="setactions"><button type="button" id="saveCopy">Copy my save code</button><button type="button" id="saveLoad">Load this code</button></div>
+    <p class="meta" id="saveNote" role="status"></p>
+    <div class="setactions end"><button class="go" value="close">Done</button></div>
+  </form>
+</dialog>
+
 <div class="screen" id="launch" role="dialog" aria-modal="true" aria-labelledby="launchTitle" hidden>
   <div class="screen-card">
     <div class="screen-term term"><pre aria-hidden="true"></pre></div>
@@ -140,7 +175,7 @@
     <div class="screen-actions"><button class="go" id="launchStart">Start</button><button id="launchTour">▶ 1-minute tour</button><button id="launchNew" hidden>New game</button></div>
     <ol class="howto">
       <li><b>1 Ask</b>Type what you'd ask Claude, ChatGPT or Gemini.</li>
-      <li><b>2 Route</b>Mandu sniffs out the best model and swallows an ant in its color.</li>
+      <li><b>2 Route</b>Mandu picks the best model, says why and how sure, and swallows an ant in its color.</li>
       <li><b>3 Steer</b>Agree with Good route or pick another model. Mandu learns either way.</li>
     </ol>
     <div class="screen-foot"><button class="hdr-btn" data-music aria-pressed="false">Music: off</button><button class="hdr-btn" data-sound>Effects: on</button><span class="meta">Progress saves in this browser.</span></div>

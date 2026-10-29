@@ -1,14 +1,14 @@
 /* Colour tokens. Light is the base; dark applies when the system prefers it (and the viewer hasn't picked Light) or when Dark is picked. */
-:root{--bg:#FBF4EC;--glow1:#FFE3C7;--glow2:#E6DCFF;--surface:rgba(255,255,255,.74);--surface-2:rgba(255,250,244,.9);--field:#FFFFFF;
-  --rule:#E7DCE4;--hover:rgba(139,111,224,.09);--ink:#2B2140;--muted:#6A5E80;--signal:#F5B82E;--signal-ink:#8F5F00;--pink:#E8789A;
+:root{--bg:#FBF4EC;--glow1:#FFE3C7;--glow2:#E6DCFF;--surface:rgba(255,255,255,.9);--surface-2:rgba(255,250,244,.96);--field:#FFFFFF;
+  --rule:#E2D5E0;--hover:rgba(139,111,224,.09);--ink:#2B2140;--muted:#54486B;--signal:#F5B82E;--signal-ink:#8F5F00;--pink:#E8789A;
   --accent:#8B6FE0;--accent-soft:rgba(139,111,224,.16);--on-accent:#FFFFFF;--shadow:0 10px 30px -12px rgba(92,64,150,.28),0 2px 6px -2px rgba(92,64,150,.12);
   --go-shadow:rgba(232,120,154,.35);color-scheme:light;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#130F22;--glow1:#2A1B47;--glow2:#0F2A3F;--surface:rgba(255,255,255,.055);--surface-2:rgba(255,255,255,.045);--field:rgba(10,8,22,.55);
-  --rule:rgba(220,205,255,.13);--hover:rgba(185,155,242,.12);--ink:#EFEAFF;--muted:#ABA1C6;--signal-ink:#F7C55A;--pink:#F59AB0;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#130F22;--glow1:#2A1B47;--glow2:#0F2A3F;--surface:rgba(255,255,255,.085);--surface-2:rgba(255,255,255,.07);--field:rgba(10,8,22,.55);
+  --rule:rgba(220,205,255,.13);--hover:rgba(185,155,242,.12);--ink:#EFEAFF;--muted:#C6BEDF;--signal-ink:#F7C55A;--pink:#F59AB0;
   --accent:#B99BF2;--accent-soft:rgba(185,155,242,.2);--on-accent:#1C1233;--shadow:0 14px 34px -14px rgba(0,0,0,.7),0 2px 6px -2px rgba(0,0,0,.4);--go-shadow:rgba(245,154,176,.25);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#130F22;--glow1:#2A1B47;--glow2:#0F2A3F;--surface:rgba(255,255,255,.055);--surface-2:rgba(255,255,255,.045);--field:rgba(10,8,22,.55);
-  --rule:rgba(220,205,255,.13);--hover:rgba(185,155,242,.12);--ink:#EFEAFF;--muted:#ABA1C6;--signal-ink:#F7C55A;--pink:#F59AB0;
+:root[data-theme="dark"]{--bg:#130F22;--glow1:#2A1B47;--glow2:#0F2A3F;--surface:rgba(255,255,255,.085);--surface-2:rgba(255,255,255,.07);--field:rgba(10,8,22,.55);
+  --rule:rgba(220,205,255,.13);--hover:rgba(185,155,242,.12);--ink:#EFEAFF;--muted:#C6BEDF;--signal-ink:#F7C55A;--pink:#F59AB0;
   --accent:#B99BF2;--accent-soft:rgba(185,155,242,.2);--on-accent:#1C1233;--shadow:0 14px 34px -14px rgba(0,0,0,.7),0 2px 6px -2px rgba(0,0,0,.4);--go-shadow:rgba(245,154,176,.25);color-scheme:dark}
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -227,7 +227,53 @@ textarea::placeholder{color:var(--muted)}
 .screen-card .credit{margin:10px 0 0}
 .screen-foot{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 14px;margin-top:14px}
 @media (max-width:520px){.howto{grid-template-columns:1fr}.recap{grid-template-columns:repeat(2,1fr)}.screen-card{padding:16px 14px}}
-@media (prefers-reduced-motion:reduce){.go,.open a,.tourbtn,textarea{transition:none}.screen-card{animation:none}}
+/* ---- playtest 2: confidence, scores, second opinion, trails, unlocks, dials, settings, glossary ---- */
+kbd{font:600 12px/1 "JetBrains Mono",monospace;padding:3px 6px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:6px;background:var(--surface-2);color:var(--ink)}
+.sure{margin:8px 0 0;font-size:14.5px;color:var(--muted)}
+.sure b{color:var(--ink)}
+.sure.close b{color:var(--signal-ink)}
+.chip .score{margin-left:4px;font:600 12px/1 "JetBrains Mono",monospace;color:var(--muted)}
+.second{margin:4px 0 12px;padding:10px 12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--rule)}
+.second b{font:600 14px/1.2 "Fredoka","Public Sans",sans-serif}
+.second p{margin:4px 0 0;font-size:14.5px}
+#second{font-size:13px;padding:8px 12px;margin:0 0 12px}
+#second:disabled,.trail button:disabled{opacity:.5;cursor:not-allowed}
+.trail{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+.trail .sw{width:10px;height:10px;border-radius:50%;flex:none}
+.trail span:nth-child(2){flex:1;min-width:180px}
+.trail button{font-size:12px;padding:6px 10px}
+.unlocks{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.unlocks li.on{color:var(--ink)}
+.dials[hidden]{display:none}
+.chat .dials{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--rule)}
+.dials-title{grid-column:1/-1;font:600 15px/1.2 "Fredoka","Public Sans",sans-serif}
+.side .back{display:none}
+.side.away .term,.side.away .mood{display:none}
+.side.away .back{display:inline-flex}
+dialog#settings{border:1px solid var(--rule);border-radius:24px;padding:0;background:var(--bg);color:var(--ink);box-shadow:var(--shadow);width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog#settings::backdrop{background:rgba(10,6,24,.55)}
+.settings{padding:20px 22px;display:grid;gap:12px}
+.settings h2{font:700 26px/1.1 "Fredoka","Public Sans",sans-serif;margin:0}
+.settings h3{font:600 17px/1.2 "Fredoka","Public Sans",sans-serif;margin:8px 0 0}
+.settings p{margin:0}
+.setrow{display:flex;gap:10px;align-items:flex-start}
+.setrow > span{display:grid;gap:2px}
+.setrow input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--accent)}
+.setrow.vol{display:grid;grid-template-columns:130px 1fr 44px;align-items:center}
+.setrow.vol output{font-size:13px;color:var(--muted);text-align:right}
+.settings textarea{min-height:64px;font:500 12px/1.4 "JetBrains Mono",monospace}
+.setactions{display:flex;gap:8px;flex-wrap:wrap}
+.setactions.end{justify-content:flex-end}
+.glossary{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0}
+.glossary dt{font-weight:700}
+.glossary dd{margin:0;color:var(--muted)}
+.tourbar{gap:8px}
+.tourbar button[aria-pressed="true"]{border-color:#F5B82E;color:#F5B82E}
+@media (max-width:520px){.setrow.vol{grid-template-columns:1fr 44px}.setrow.vol label{grid-column:1/-1}.glossary{grid-template-columns:1fr}.tourbar{flex-wrap:wrap}}
+/* Reduced motion and Calm mode: no pops, slides or pulsing; changes just appear. */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.st.on{transform:none}}
+html.calm *,html.calm *::before,html.calm *::after{animation:none!important;transition:none!important}
+html.calm .st.on{transform:none}
 /* ---- extension popup (html.popup is set by app.js) ---- */
 html.popup body{width:780px;height:580px;overflow-y:auto}
 html.popup .wrap{padding:12px 14px 20px}
