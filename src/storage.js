@@ -13,5 +13,13 @@
   function endSandbox(){try{const b=localStorage.getItem(BACKUP);if(b!==null){restore(JSON.parse(b));localStorage.removeItem(BACKUP)}}catch(e){}}
   function inSandbox(){try{return localStorage.getItem(BACKUP)!==null}catch(e){return false}}
   endSandbox();
-  A.storage={get,set,snapshot,restore,beginSandbox,endSandbox,inSandbox};
+  // Save codes: the website and the extension can't share storage, so players copy their save across by hand.
+  const CODE='ANTROUTER1:';
+  function exportSave(){return CODE+btoa(unescape(encodeURIComponent(JSON.stringify(snapshot()))))}
+  function importSave(text){let o;
+    try{const s=String(text).trim();if(!s.startsWith(CODE))return false;o=JSON.parse(decodeURIComponent(escape(atob(s.slice(CODE.length)))))}catch(e){return false}
+    if(!o||typeof o!=='object'||Array.isArray(o))return false;
+    const ks=Object.keys(o);if(!ks.length||!ks.every(k=>k.startsWith(PREFIX)&&typeof o[k]==='string'))return false;
+    restore(o);return true}
+  A.storage={get,set,snapshot,restore,beginSandbox,endSandbox,inSandbox,exportSave,importSave};
 })(globalThis.AntRouter = globalThis.AntRouter || {});

@@ -21,6 +21,16 @@ test('mute is remembered', () => {
   assert.equal(globalThis.AntRouter.audio.createAudio(s).muted(), true);
 });
 
+test('volume is remembered and clamped to 0..1', () => {
+  const s = memStore();
+  const sfx = globalThis.AntRouter.audio.createAudio(s);
+  assert.equal(sfx.volume(), 1);
+  sfx.setVolume(0.35);
+  assert.equal(s.data.sfxVol, 0.35);
+  sfx.setVolume(7);
+  assert.equal(globalThis.AntRouter.audio.createAudio(s).volume(), 1);
+});
+
 test('every sound the page uses exists', () => {
   const names = globalThis.AntRouter.audio.SOUNDS;
   for (const n of ['tap', 'route', 'gulp', 'good', 'hmm', 'coin', 'levelup', 'quest', 'badge', 'zot', 'pet', 'nap', 'start', 'end', 'lap', 'nope'])

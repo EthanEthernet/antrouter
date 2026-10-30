@@ -26,6 +26,25 @@ test('the tour sandbox puts the viewer\'s save back when it ends', () => {
   assert.equal(S.inSandbox(), false);
 });
 
+test('a save code moves progress to another copy of the app', () => {
+  let S = load({ 'antrouter:prog': '{"xp":170,"crumbs":9}', 'antrouter:bias': '{"code:easy":{"gpt":0.08}}', 'other:key': 'x' });
+  const code = S.exportSave();
+  assert.match(code, /^ANTROUTER1:/);
+  S = load({ 'antrouter:prog': '{"xp":3}', 'antrouter:tab': '"shop"' });
+  assert.equal(S.importSave('  ' + code + '\n'), true);
+  assert.equal(localStorage.getItem('antrouter:prog'), '{"xp":170,"crumbs":9}');
+  assert.equal(localStorage.getItem('antrouter:bias'), '{"code:easy":{"gpt":0.08}}');
+  assert.equal(localStorage.getItem('antrouter:tab'), null);
+  assert.equal(localStorage.getItem('other:key'), null);
+});
+
+test('a broken or foreign save code is refused and changes nothing', () => {
+  const S = load({ 'antrouter:prog': '{"xp":3}' });
+  for (const bad of ['', 'hello', 'ANTROUTER1:not-base64!!', 'ANTROUTER1:' + Buffer.from('{"evil:key":"1"}').toString('base64'), 'ANTROUTER1:' + Buffer.from('[1,2]').toString('base64')])
+    assert.equal(S.importSave(bad), false, bad);
+  assert.equal(localStorage.getItem('antrouter:prog'), '{"xp":3}');
+});
+
 test('a page closed mid-tour gets its save back on the next load', () => {
   let S = load({ 'antrouter:prog': '{"xp":77}' });
   S.beginSandbox();

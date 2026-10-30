@@ -23,27 +23,25 @@ test('saved progress loads on top of the defaults', () => {
   assert.ok(Math.abs(g.levelInfo().progress - 0.25) < 1e-9);
 });
 
-test('first route pays route XP plus the First trail badge and saves', () => {
+test('first route pays a little XP plus the First trail badge and saves', () => {
   const s = memStore(), g = G.createGame(s), toasts = [];
   g.on('toast', m => toasts.push(m));
   g.routed('Claude', { platform: 'any', task: 'fact' });
-  assert.equal(g.state().xp, 25);
-  assert.equal(g.state().crumbs, 15);
-  assert.equal(s.data.prog.xp, 25);
+  assert.equal(g.state().xp, 19);
+  assert.equal(g.state().crumbs, 13);
+  assert.equal(s.data.prog.xp, 19);
   assert.deepEqual(toasts, ['Badge: First trail  +10 crumbs']);
 });
 
-test('third route finishes a quest, levels up once and rotates in the next quest', () => {
-  const g = G.createGame(memStore()), ups = [], quests = [];
-  g.on('levelup', e => ups.push(e));
+test('third route finishes a quest and rotates in the next quest', () => {
+  const g = G.createGame(memStore()), quests = [];
   g.on('quest', e => quests.push(e));
   g.routed('Claude', { platform: 'any', task: 'fact' });
   g.routed('GPT', { platform: 'any', task: 'fact' });
   g.routed('Gemini', { platform: 'any', task: 'fact' });
-  assert.equal(g.state().xp, 65);
-  assert.equal(g.state().crumbs, 43);
+  assert.equal(g.state().xp, 47);
+  assert.equal(g.state().crumbs, 37);
   assert.equal(g.state().qdone, 1);
-  assert.deepEqual(ups, [{ name: 'Forager', unlocked: ['UCI bandana'] }]);
   assert.deepEqual(quests, [{ done: 'r3', next: 'g1' }]);
   assert.deepEqual(g.state().quests.map(q => q.id), ['g1', 'rr1', 'p1']);
   assert.ok(g.state().badges.includes('tri'));
@@ -85,11 +83,53 @@ test('locked or unaffordable gear cannot be bought', () => {
   assert.equal(poor.buy('bow'), false);
 });
 
-test('max level takes about 30 plain routes, not 13', () => {
-  const g = G.createGame(memStore());
-  let n = 0;
-  while (g.levelInfo().next && n < 100) { g.routed('Claude', { platform: 'any', task: 'fact' }); n++; }
-  assert.ok(n >= 25, 'reached max level after only ' + n + ' routes');
+test('XP rewards decisions: deciding loops level up far faster than routing alone', () => {
+  const routeOnly = G.createGame(memStore());
+  let a = 0;
+  while (routeOnly.levelInfo().next && a < 200) { routeOnly.routed('Claude', { platform: 'any', task: 'fact' }); a++; }
+  const decider = G.createGame(memStore());
+  let b = 0;
+  while (decider.levelInfo().next && b < 200) { decider.routed('Claude', { platform: 'any', task: 'fact' }); decider.ratedGood(); decider.opened(); decider.addLap(); b++; }
+  assert.ok(a >= 60, 'route-only reached max after ' + a);
+  assert.ok(b <= a / 3, `deciding took ${b} loops vs ${a} plain routes`);
+});
+
+test('levels unlock routing features and announce them', () => {
+  const g = G.createGame(memStore({ prog: { xp: 55 } })), ups = [];
+  g.on('levelup', e => ups.push(e));
+  assert.equal(g.has('scores'), false);
+  g.ratedGood();
+  assert.equal(g.has('scores'), true);
+  assert.equal(g.has('closecall'), false);
+  assert.equal(ups[0].name, 'Forager');
+  assert.match(ups[0].feature, /Score bars/);
+  assert.deepEqual(ups[0].unlocked, ['UCI bandana']);
+  const top = G.createGame(memStore({ prog: { xp: 300 } }));
+  assert.ok(top.has('closecall') && top.has('dials'));
+});
+
+test('crumbs can be spent on routing help, not just gear', () => {
+  const g = G.createGame(memStore({ prog: { crumbs: 10 } }));
+  assert.equal(g.spend(6), true);
+  assert.equal(g.state().crumbs, 4);
+  assert.equal(g.spend(6), false);
+  assert.equal(g.state().crumbs, 4);
+  assert.equal(g.sessionSummary().spent, 6);
+});
+
+test('opening a pick in its app pays once and counts for its quest', () => {
+  const g = G.createGame(memStore({ prog: { quests: [{ id: 'o1', n: 0 }, { id: 'rr1', n: 0 }, { id: 'p1', n: 0 }] } }));
+  g.opened();
+  assert.equal(g.state().xp, 10);
+  assert.equal(g.state().qdone, 1);
+});
+
+test('reload picks up a save written by someone else (tour, save code)', () => {
+  const s = memStore({ prog: { xp: 5 } }), g = G.createGame(s);
+  s.set('prog', { xp: 170, crumbs: 9 });
+  g.reload();
+  assert.equal(g.levelInfo().name, 'Tracker');
+  assert.equal(g.state().crumbs, 9);
 });
 
 test('only the first reroute of a result pays XP', () => {

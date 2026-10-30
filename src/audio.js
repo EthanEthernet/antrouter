@@ -25,9 +25,9 @@
   const PRI={levelup:9,badge:8,quest:7,lap:6,coin:5,start:5,end:5,zot:5,gulp:4,hmm:4,good:4,route:3,pet:2,nap:2,nope:2,tap:1};
 
   function createAudio(store){
-    let muted=!!store.get('muted',false), ctx=null, out=null, pending=null;
+    let muted=!!store.get('muted',false), vol=+store.get('sfxVol',1), ctx=null, out=null, pending=null;
     const AC=globalThis.AudioContext||globalThis.webkitAudioContext;
-    function ready(){if(!AC)return false;if(!ctx){try{ctx=new AC();out=ctx.createGain();out.gain.value=.8;out.connect(ctx.destination)}catch(e){ctx=null;return false}}
+    function ready(){if(!AC)return false;if(!ctx){try{ctx=new AC();out=ctx.createGain();out.gain.value=.8*vol;out.connect(ctx.destination)}catch(e){ctx=null;return false}}
       if(ctx.state==='suspended')ctx.resume().catch(()=>{});return true}
     function voice(v,t0){const o=ctx.createOscillator(),g=ctx.createGain(),t=t0+v.at,vol=v.vol||.14;
       o.type=v.type||'sine';o.frequency.setValueAtTime(v.f,t);if(v.slide)o.frequency.exponentialRampToValueAtTime(v.slide,t+v.dur);
@@ -37,7 +37,8 @@
       if(pending){if((PRI[name]||0)>(PRI[pending]||0))pending=name;return}
       pending=name;setTimeout(()=>{const s=SFX[pending];pending=null;const t0=ctx.currentTime+.01;s.forEach(v=>voice(v,t0))},0)}
     function setMuted(m){muted=!!m;store.set('muted',muted)}
-    return{play,setMuted,muted:()=>muted};
+    function setVolume(v){vol=Math.max(0,Math.min(1,+v||0));store.set('sfxVol',vol);if(out)out.gain.value=.8*vol}
+    return{play,setMuted,muted:()=>muted,setVolume,volume:()=>vol};
   }
   A.audio={createAudio,SOUNDS:Object.keys(SFX)};
 })(globalThis.AntRouter = globalThis.AntRouter || {});

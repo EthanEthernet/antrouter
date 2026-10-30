@@ -44,6 +44,28 @@ test('escapes HTML in the reason', () => {
   assert.doesNotMatch(h, /<img/);
 });
 
+test('every pick says how sure Mandu is', () => {
+  assert.match(result.resultHTML(pick('Fix this off-by-one bug in my Python loop'), 'any'), /Likely pick/);
+  assert.match(result.resultHTML(pick('why is my Python loop slow'), 'any'), /Close call.*code and reasoning/s);
+});
+
+test('scores show on the chips only once unlocked', () => {
+  const c = pick('Fix this off-by-one bug in my Python loop');
+  assert.doesNotMatch(result.resultHTML(c, 'any'), /class="score"/);
+  assert.match(result.resultHTML(c, 'any', { scores: true }), /Claude Sonnet<span class="score">84<\/span>/);
+});
+
+test('second opinion: a paid button, free on close calls at Tracker, then the comparison', () => {
+  const c = pick('Fix this off-by-one bug in my Python loop');
+  assert.match(result.resultHTML(c, 'any', { secondCost: 6, crumbs: 10 }), /id="second"[^>]*>Second opinion · 6 crumbs/);
+  assert.match(result.resultHTML(c, 'any', { secondCost: 6, crumbs: 2 }), /id="second" disabled/);
+  const close = pick('why is my Python loop slow');
+  assert.match(result.resultHTML(close, 'any', { closecall: true, secondCost: 6 }), /class="second".*Runner-up/s);
+  c.second = true;
+  assert.match(result.resultHTML(c, 'any', { secondCost: 6 }), /Claude Opus scored 77/);
+  assert.doesNotMatch(result.resultHTML(c, 'any', { secondCost: 6 }), /id="second"/);
+});
+
 test('platform mode lists only that family', () => {
   const h = result.resultHTML(pick('Fix this off-by-one bug in my Python loop', 'claude'), 'claude');
   assert.match(h, /data-id="opus"/);
