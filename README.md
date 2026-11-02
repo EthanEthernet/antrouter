@@ -12,8 +12,55 @@ Built as a course prototype at UC Irvine.
 
 - **Original prototype (single file):**  https://ethanethernet.github.io/antrouter/
 - **Run locally:** double-click `index.html`. No build step, no install, no API key.
-- **Chrome extension:** open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick this folder. Click the AntRouter icon in the toolbar to open Mandu in a popup. Progress in the popup is saved separately from the website.
+- **Chrome extension:** load this folder as an unpacked extension and open Mandu from the toolbar. Step-by-step instructions are in [Using the Chrome extension](#using-the-chrome-extension) below.
 - **Watch the loop:** press **▶ 1-minute tour** on the website, or play [`media/antrouter-1min-tour.mp4`](media/antrouter-1min-tour.mp4).
+
+## Using the Chrome extension
+
+The extension is the same app as the website, shrunk into a popup so Mandu is one click away while you work in Claude, ChatGPT or Gemini. It isn't on the Chrome Web Store yet, so you load it yourself. That takes about a minute.
+
+### Install it
+
+1. Get the code: clone this repo, or download it as a ZIP from GitHub (**Code → Download ZIP**) and unzip it.
+2. In Chrome, go to `chrome://extensions`.
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked** and choose the folder that contains `manifest.json` (the repo's top folder).
+5. AntRouter appears in your extensions list. Click the puzzle-piece icon in Chrome's toolbar and pin **AntRouter** so the anteater icon stays visible.
+
+Want a smaller copy with only the files the extension needs? Run `powershell -ExecutionPolicy Bypass -File tools/package-extension.ps1` from the repo folder. It builds `dist/antrouter-extension/` (load that folder instead) and `dist/antrouter-extension.zip`.
+
+### Start it
+
+Click the AntRouter icon in the toolbar. Mandu opens in a popup right away. There's no title screen in the extension, so you can route a prompt within seconds. The popup closes when you click anywhere outside it. Your progress is saved, so it picks up where you left off next time.
+
+### Find your way around the popup
+
+| Where | What it does |
+|---|---|
+| **Top bar** | Your level and crumbs, **Settings**, **End session** and the Light/Dark/System theme switch. |
+| **Prompt box** | Choose the app you're working in (**Any app**, **Claude**, **ChatGPT**, **Gemini**), type a prompt or tap a sample (the samples scroll sideways), then press **Route prompt** or **Ctrl+Enter** (**⌘+Enter** on a Mac). |
+| **Left side: Mandu** | Watch him follow the trail and swallow an ant. Under him: **Zot!**, **Pet Mandu**, **Nap** and **Wake up**. The window lights hide him (red), minimize him (yellow) or expand him (green). |
+| **Right side: tabs** | **Route** shows the pick, how sure Mandu is, the reroute chips, **Good route**, **Second opinion** and **Open in…**. **Trails** shows what he has learned, **Progress** your level, unlocks, badges and quests, **Shop** gear, and **About** a glossary of Mandu's words. |
+
+Keyboard: **Tab** moves between controls, and the arrow keys move between tabs.
+
+**Open in Claude** and **Open in ChatGPT** open a new tab with your prompt already filled in. Gemini can't take a prompt through a link, so **Open in Gemini** copies it for you to paste.
+
+### How the extension differs from the website
+
+- **No title screen, tour or core-loop strip.** These are left out to fit the popup. Use the website to watch the tour.
+- **Its own save.** Chrome keeps the extension's storage separate from the website's. To bring your level across, open **Settings → Move your save** on one, press **Copy my save code**, then paste it into **Settings** on the other and press **Load this code**.
+- **Same game otherwise.** Levels, unlocks, crumbs, quests, Calm mode and sound all work the same.
+
+### Update it
+
+After you pull new code (or download a fresh ZIP), go to `chrome://extensions` and click the circular **reload** arrow on the AntRouter card. Your save is kept.
+
+### If something looks wrong
+
+- **The icon is missing:** pin it from the puzzle-piece menu.
+- **"Manifest file is missing or unreadable":** you picked the wrong folder. Choose the one that has `manifest.json` directly inside it.
+- **Music doesn't play:** turn it on in **Settings** (it's off by default). If you used the packaging script, re-run it so `Carefree.mp3` is included.
 
 ## What's in the prototype
 
