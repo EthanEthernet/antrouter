@@ -12,7 +12,7 @@ Built as a course prototype at UC Irvine.
 
 - **Original prototype (single file):**  https://ethanethernet.github.io/antrouter/
 - **Run locally:** double-click `index.html`. No build step, no install, no API key.
-- **Chrome extension:** load this folder as an unpacked extension and open Mandu from the toolbar. Step-by-step instructions are in [Using the Chrome extension](#using-the-chrome-extension) below.
+- **Chrome extension:** load this folder as an unpacked extension and open Mandu from the toolbar. Step-by-step instructions are on the website at [ethanethernet.github.io/antrouter/extension.html](https://ethanethernet.github.io/antrouter/extension.html) and in [Using the Chrome extension](#using-the-chrome-extension) below.
 - **Watch the loop:** press **▶ 1-minute tour** on the website, or play [`media/antrouter-1min-tour.mp4`](media/antrouter-1min-tour.mp4).
 
 ## Using the Chrome extension

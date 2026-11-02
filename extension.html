@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AntRouter Chrome extension</title>
+<meta name="description" content="How to install, start and find your way around the AntRouter Chrome extension.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Fredoka:wght@500..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script src="src/storage.js"></script>
+<script src="src/theme.js"></script>
+</head>
+<body>
+<div class="wrap guide">
+  <header class="top"><h1>AntRouter for Chrome</h1>
+    <div class="top-right">
+      <a class="hdr-btn" href="./">← Back to the game</a>
+      <div class="theme-switch" role="radiogroup" aria-label="Color theme">
+        <button role="radio" data-theme-choice="system">System</button><button role="radio" data-theme-choice="light">Light</button><button role="radio" data-theme-choice="dark">Dark</button>
+      </div>
+    </div>
+  </header>
+  <p class="sub">The extension is the same game as this website, shrunk into a popup so Mandu is one click away while you work in Claude, ChatGPT or Gemini. It isn't on the Chrome Web Store yet, so you load it yourself. That takes about a minute.</p>
+
+  <nav class="card guide-toc" aria-label="On this page">
+    <b class="cardtitle">On this page</b>
+    <ol>
+      <li><a href="#install">Install it</a></li>
+      <li><a href="#start">Start it</a></li>
+      <li><a href="#popup">Find your way around the popup</a></li>
+      <li><a href="#differences">How it differs from the website</a></li>
+      <li><a href="#update">Update it</a></li>
+      <li><a href="#help">If something looks wrong</a></li>
+    </ol>
+  </nav>
+
+  <section class="card" id="install" aria-labelledby="h-install">
+    <h2 id="h-install">1. Install it</h2>
+    <ol class="steps-list">
+      <li><b>Get the files.</b> <a class="go guide-dl" href="https://github.com/EthanEthernet/antrouter/archive/refs/heads/main.zip">Download AntRouter (ZIP)</a> and unzip it, or clone <a href="https://github.com/EthanEthernet/antrouter">the GitHub repo</a>.</li>
+      <li>In Chrome, open <code>chrome://extensions</code> (paste it into the address bar).</li>
+      <li>Turn on <b>Developer mode</b> (top right of that page).</li>
+      <li>Click <b>Load unpacked</b> and choose the folder that contains <code>manifest.json</code>. In the ZIP that's the <code>antrouter-main</code> folder.</li>
+      <li>Click the puzzle-piece icon in Chrome's toolbar and pin <b>AntRouter</b> so the anteater icon stays visible.</li>
+    </ol>
+    <p class="meta">Working from the repo? <code>powershell -ExecutionPolicy Bypass -File tools/package-extension.ps1</code> builds a trimmed copy in <code>dist/antrouter-extension/</code> (load that folder instead) and a ZIP next to it.</p>
+  </section>
+
+  <section class="card" id="start" aria-labelledby="h-start">
+    <h2 id="h-start">2. Start it</h2>
+    <p>Click the AntRouter icon in the toolbar. Mandu opens in a popup right away. There's no title screen in the extension, so you can route a prompt within seconds.</p>
+    <p>The popup closes when you click anywhere outside it. Your progress is saved, so it picks up where you left off next time.</p>
+  </section>
+
+  <section class="card" id="popup" aria-labelledby="h-popup">
+    <h2 id="h-popup">3. Find your way around the popup</h2>
+    <div class="guide-map">
+      <div><h3>Top bar</h3><p>Your level and crumbs, <b>Settings</b>, <b>End session</b> and the Light/Dark/System theme switch.</p></div>
+      <div><h3>Prompt box</h3><p>Choose the app you're working in (<b>Any app</b>, <b>Claude</b>, <b>ChatGPT</b>, <b>Gemini</b>), type a prompt or tap a sample (the samples scroll sideways), then press <b>Route prompt</b> or <kbd>Ctrl</kbd> + <kbd>Enter</kbd> (<kbd>⌘</kbd> + <kbd>Enter</kbd> on a Mac).</p></div>
+      <div><h3>Left side: Mandu</h3><p>Watch him follow the trail and swallow an ant. Under him: <b>Zot!</b>, <b>Pet Mandu</b>, <b>Nap</b> and <b>Wake up</b>. The window lights hide him (red), minimize him (yellow) or expand him (green).</p></div>
+      <div><h3>Right side: tabs</h3><p><b>Route</b> shows the pick, how sure Mandu is, the reroute chips, <b>Good route</b>, <b>Second opinion</b> and <b>Open in…</b>. <b>Trails</b> shows what he has learned, <b>Progress</b> your level, unlocks, badges and quests, <b>Shop</b> gear, and <b>About</b> a glossary of Mandu's words.</p></div>
+    </div>
+    <p><b>Keyboard:</b> <kbd>Tab</kbd> moves between controls, and the arrow keys move between tabs.</p>
+    <p><b>Open in Claude</b> and <b>Open in ChatGPT</b> open a new tab with your prompt already filled in. Gemini can't take a prompt through a link, so <b>Open in Gemini</b> copies it for you to paste.</p>
+  </section>
+
+  <section class="card" id="differences" aria-labelledby="h-diff">
+    <h2 id="h-diff">4. How it differs from the website</h2>
+    <ul>
+      <li><b>No title screen, tour or core-loop strip.</b> They're left out to fit the popup. Use <a href="./">the website</a> to watch the tour.</li>
+      <li><b>Its own save.</b> Chrome keeps the extension's storage separate from the website's. To bring your level across, open <b>Settings → Move your save</b> on one, press <b>Copy my save code</b>, then paste it into <b>Settings</b> on the other and press <b>Load this code</b>.</li>
+      <li><b>Same game otherwise.</b> Levels, unlocks, crumbs, quests, Calm mode and sound all work the same.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="update" aria-labelledby="h-update">
+    <h2 id="h-update">5. Update it</h2>
+    <p>Download a fresh ZIP (or pull the repo), replace the old folder, then go to <code>chrome://extensions</code> and click the circular <b>reload</b> arrow on the AntRouter card. Your save is kept as long as you reload the same extension rather than removing it.</p>
+  </section>
+
+  <section class="card" id="help" aria-labelledby="h-help">
+    <h2 id="h-help">6. If something looks wrong</h2>
+    <dl class="glossary">
+      <dt>The icon is missing</dt><dd>Pin it from the puzzle-piece menu.</dd>
+      <dt>"Manifest file is missing or unreadable"</dt><dd>You picked the wrong folder. Choose the one that has <code>manifest.json</code> directly inside it.</dd>
+      <dt>Music doesn't play</dt><dd>Turn it on in <b>Settings</b> (it's off by default). If you used the packaging script, run it again so <code>Carefree.mp3</code> is included.</dd>
+    </dl>
+  </section>
+
+  <p class="meta guide-foot"><a href="./">← Back to the game</a> · <a href="https://github.com/EthanEthernet/antrouter">Source on GitHub</a></p>
+</div>
+</body>
+</html>
