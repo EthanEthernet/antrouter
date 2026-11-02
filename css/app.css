@@ -270,6 +270,28 @@ dialog#settings::backdrop{background:rgba(10,6,24,.55)}
 .tourbar{gap:8px}
 .tourbar button[aria-pressed="true"]{border-color:#F5B82E;color:#F5B82E}
 @media (max-width:520px){.setrow.vol{grid-template-columns:1fr 44px}.setrow.vol label{grid-column:1/-1}.glossary{grid-template-columns:1fr}.tourbar{flex-wrap:wrap}}
+/* ---- Chrome extension guide page (extension.html) and the link to it ---- */
+a.hdr-btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:999px}
+a.hdr-btn:hover{border-color:var(--accent);background:var(--hover)}
+html.popup .ext-link{display:none}
+.wrap.guide{max-width:860px;display:grid;gap:16px}
+.guide .top+.sub{margin:0}
+.guide .card h2{font:700 22px/1.2 "Fredoka","Public Sans",sans-serif;margin:0 0 10px}
+.guide .card h3{font:600 16px/1.2 "Fredoka","Public Sans",sans-serif;margin:0 0 4px;color:var(--ink)}
+.guide .card p{margin:0 0 10px}
+.guide .card p:last-child{margin:0}
+.guide a:not(.go):not(.hdr-btn),.brief .ext-more a{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:3px}
+.guide code{font:500 13px/1.4 "JetBrains Mono",monospace;background:var(--surface-2);border:1px solid var(--rule);padding:1px 6px;border-radius:6px}
+.guide-toc ol{margin:8px 0 0;padding-left:22px;columns:2;column-gap:28px}
+.guide-toc li{margin:3px 0}
+.steps-list{margin:0 0 12px;padding-left:22px;display:grid;gap:10px}
+a.go.guide-dl{display:inline-flex;text-decoration:none;padding:9px 14px;margin:6px 0 2px;font-size:14px}
+.guide-map{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.guide-map > div{background:var(--surface-2);border:1px solid var(--rule);border-radius:16px;padding:12px 14px}
+.guide-map p{color:var(--muted);font-size:14.5px}
+.guide ul{margin:0;padding-left:20px;display:grid;gap:8px}
+.guide-foot{text-align:center}
+@media (max-width:620px){.guide-map{grid-template-columns:1fr}.guide-toc ol{columns:1}}
 /* Reduced motion and Calm mode: no pops, slides or pulsing; changes just appear. */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.st.on{transform:none}}
 html.calm *,html.calm *::before,html.calm *::after{animation:none!important;transition:none!important}
