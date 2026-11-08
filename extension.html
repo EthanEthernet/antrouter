@@ -11,6 +11,14 @@
 <link rel="stylesheet" href="css/app.css?v=9">
 <script src="src/storage.js?v=9"></script>
 <script src="src/theme.js?v=9"></script>
+<style>
+/* demo video (this page only) */
+.guide-demo video{display:block;width:100%;max-width:780px;aspect-ratio:780/580;height:auto;margin:6px auto 10px;border-radius:14px;border:1px solid var(--rule);background:#0B1120}
+.guide-demo details{margin-top:6px}
+.guide-demo summary{cursor:pointer;font-weight:600}
+.guide-demo ol{margin:8px 0 0;padding-left:22px;display:grid;gap:4px;color:var(--muted)}
+.guide-toc .demo-link{margin:8px 0 0}
+</style>
 </head>
 <body>
 <div class="wrap guide">
@@ -24,8 +32,31 @@
   </header>
   <p class="sub">The extension is the same game as this website, shrunk into a popup so Mandu is one click away while you work in Claude, ChatGPT or Gemini. It isn't on the Chrome Web Store yet, so you load it yourself. That takes about a minute.</p>
 
+  <section class="card guide-demo" id="demo" aria-labelledby="h-demo">
+    <h2 id="h-demo">Watch it in 60 seconds</h2>
+    <video controls muted playsinline preload="metadata" poster="media/extension-demo-poster.jpg" aria-describedby="demo-note">
+      <source src="media/extension-demo.mp4" type="video/mp4">
+      Your browser can't play this video. <a href="media/extension-demo.mp4">Download the demo (MP4)</a>.
+    </video>
+    <p class="meta" id="demo-note">Recorded from the real extension popup. There's no sound; the captions are on screen.</p>
+    <details>
+      <summary>Read what the video shows</summary>
+      <ol>
+        <li>Click the AntRouter icon in Chrome's toolbar and Mandu opens in a popup.</li>
+        <li>Pick the app you're working in (Claude), type a prompt and press <b>Route prompt</b>.</li>
+        <li>Mandu follows the trail, swallows an ant, and says which model, why and how sure he is.</li>
+        <li>The prompt adapter suggests a tweak for that model, with the reason and a diff. Your original is sent unless you press <b>Use suggested prompt</b>.</li>
+        <li><b>Open in Claude</b> opens a new tab with the prompt filled in.</li>
+        <li>Tapping another model reroutes; Mandu learns that trail for next time.</li>
+        <li>The Trails and Progress tabs show what he learned and what you've unlocked.</li>
+        <li><b>Settings</b> has Calm mode, volume, and a save code to move your progress between the extension and the website.</li>
+      </ol>
+    </details>
+  </section>
+
   <nav class="card guide-toc" aria-label="On this page">
     <b class="cardtitle">On this page</b>
+    <p class="demo-link"><a href="#demo">▶ Watch the 60-second demo</a></p>
     <ol>
       <li><a href="#install">Install it</a></li>
       <li><a href="#start">Start it</a></li>
