@@ -60,6 +60,30 @@ test('short creative prompts read as creative writing, not quick facts', () => {
     assert.equal(router.classify(text).task, 'creative', text);
 });
 
+const ARTICLE = 'The ant colony optimization algorithm was introduced by Marco Dorigo in 1992. '.repeat(8).trim();
+const PY_ARTICLE = 'Python developers often debug a slow loop by profiling the function and fixing the bug in the API layer. '.repeat(4).trim();
+
+test('"main points" of a pasted article reads as summarizing, not chat', () => {
+  assert.equal(router.classify('What are the main points?\n\n' + ARTICLE).task, 'summarize');
+  for (const q of ['Give me the gist', 'Any key takeaways?', 'Quick overview please', 'What is this about?', 'Recap this for me'])
+    assert.equal(router.classify(q).task, 'summarize', q);
+});
+
+test('keywords inside pasted text do not decide the task', () => {
+  assert.equal(router.classify('What are the main points?\n\n' + PY_ARTICLE).task, 'summarize');
+  assert.equal(router.classify('Who is the author of this?\n\n' + PY_ARTICLE).task, 'fact');
+});
+
+test('a pasted text with no clear instruction: prose is summarizing, a code block is code', () => {
+  assert.equal(router.classify('Thoughts?\n\n' + ARTICLE).task, 'summarize');
+  assert.equal(router.classify('Thoughts?\n\n```js\nfor (let i = 0; i <= n; i++) total += a[i];\n```').task, 'code');
+});
+
+test('the instruction still wins when it names a task', () => {
+  assert.equal(router.classify('Write a short poem inspired by this:\n\n' + ARTICLE).task, 'creative');
+  assert.equal(router.classify('Find the bug in this code\n\n```py\nfor i in range(10):\n    print(i)\n```').task, 'code');
+});
+
 test('platform filter only returns that vendor', () => {
   assert.deepEqual(router.allowedModels('gemini').map(m => m.id), ['gpro', 'gflash']);
   assert.deepEqual(router.allowedModels('claude').map(m => m.id), ['opus', 'sonnet', 'haiku']);

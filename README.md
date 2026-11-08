@@ -120,7 +120,7 @@ tools/record-tour.js               Playwright script that re-records the tour
 - Don't put `<script>` code or `onclick="…"` attributes in `index.html`. Chrome extensions block them, so put code in `src/` instead.
 - `index.html` loads storage and theme in `<head>`, then models, audio, router, game, mandu, result, tour, app. A new file goes before the files that use it.
 - **Tests:** with Node installed, run `node --test` from this folder.
-- **Releasing:** browsers cache `css/` and `src/` for up to 10 minutes, so every page links them with a version tag (`app.css?v=8`). When you change CSS or JS, bump the number in `index.html` and `extension.html` together. `tests/assets.test.js` fails if a link is missing the tag or the pages disagree.
+- **Releasing:** browsers cache `css/` and `src/` for up to 10 minutes, so every page links them with a version tag (`app.css?v=9`). When you change CSS or JS, bump the number in `index.html` and `extension.html` together. `tests/assets.test.js` fails if a link is missing the tag or the pages disagree.
 
 ## How the router works (prototype)
 
