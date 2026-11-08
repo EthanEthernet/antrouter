@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Fredoka:wght@500..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=7">
-<script src="src/storage.js?v=7"></script>
-<script src="src/theme.js?v=7"></script>
+<link rel="stylesheet" href="css/app.css?v=8">
+<script src="src/storage.js?v=8"></script>
+<script src="src/theme.js?v=8"></script>
 </head>
 <body>
 <div class="wrap">
@@ -88,6 +88,11 @@
           <div class="meta">A trail is what Mandu has learned about which model you prefer, for one kind of prompt at one difficulty. Rerouting strengthens it.</div>
           <div id="learned" class="meta" style="margin-top:8px"></div>
         </div>
+        <div class="card">
+          <b class="cardtitle">Prompt adapter</b>
+          <div class="meta">When a prompt can be clearer for the model Mandu picked, a "Mandu suggests" panel shows the change and why. Your original is sent unless you choose the suggestion. This counts what you chose, so you can see whether the suggestions help.</div>
+          <div id="adapterStats" class="adapter-stats" style="margin-top:8px"></div>
+        </div>
       </section>
 
       <section class="panel" role="tabpanel" id="panel-progress" aria-labelledby="tab-progress" tabindex="0" hidden>
@@ -159,6 +164,7 @@
   <form method="dialog" class="settings">
     <h2 id="setTitle">Settings</h2>
     <label class="setrow"><input type="checkbox" id="setCalm"><span><b>Calm mode</b><span class="meta">Mandu stays still between routes, with fewer pop-ups, only key sounds and no zot shortcut.</span></span></label>
+    <label class="setrow"><input type="checkbox" id="setAdapt"><span><b>Prompt suggestions</b><span class="meta">Show the prompt adapter's suggested tweaks for the chosen model. Nothing changes unless you pick a suggestion.</span></span></label>
     <label class="setrow"><input type="checkbox" id="setZot"><span><b>Zot shortcut</b><span class="meta">Typing z-o-t makes Mandu cheer.</span></span></label>
     <div class="setrow vol"><label for="setMusic"><b>Music volume</b></label><input type="range" id="setMusic" min="0" max="100" step="5"><output id="setMusicOut"></output></div>
     <div class="setrow vol"><label for="setSfx"><b>Effects volume</b></label><input type="range" id="setSfx" min="0" max="100" step="5"><output id="setSfxOut"></output></div>
@@ -199,13 +205,14 @@
     <div class="screen-foot"><span class="meta">Your progress is saved. Close the tab whenever you like.</span></div>
   </div>
 </div>
-<script src="src/models.js?v=7"></script>
-<script src="src/audio.js?v=7"></script>
-<script src="src/router.js?v=7"></script>
-<script src="src/game.js?v=7"></script>
-<script src="src/mandu.js?v=7"></script>
-<script src="src/result.js?v=7"></script>
-<script src="src/tour.js?v=7"></script>
-<script src="src/app.js?v=7"></script>
+<script src="src/models.js?v=8"></script>
+<script src="src/audio.js?v=8"></script>
+<script src="src/router.js?v=8"></script>
+<script src="src/game.js?v=8"></script>
+<script src="src/mandu.js?v=8"></script>
+<script src="src/adapter.js?v=8"></script>
+<script src="src/result.js?v=8"></script>
+<script src="src/tour.js?v=8"></script>
+<script src="src/app.js?v=8"></script>
 </body>
 </html>

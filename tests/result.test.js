@@ -66,6 +66,51 @@ test('second opinion: a paid button, free on close calls at Tracker, then the co
   assert.doesNotMatch(result.resultHTML(c, 'any', { secondCost: 6 }), /id="second"/);
 });
 
+test('prompt adapter panel: suggests, but the original is sent until the user chooses', () => {
+  require('../src/adapter.js');
+  const AD = globalThis.AntRouter.adapter;
+  const text = 'CRITICAL: You MUST explain why this fails.';
+  const c = pick(text, 'claude');
+  c.ad = AD.adapt(text, c.chosen, c.d.task);
+  let h = result.resultHTML(c, 'claude');
+  assert.match(h, /Mandu suggests 1 tweak for Claude/);
+  assert.match(h, /Tone down CAPS/);
+  assert.match(h, /class="del">− CRITICAL: You MUST explain/);
+  assert.match(h, /class="ins">\+ You must explain/);
+  assert.match(h, /href="https:\/\/claude\.ai\/new\?q=CRITICAL/, 'original is the default');
+  assert.match(h, /will send your original prompt/);
+  c.useAdapted = true;
+  h = result.resultHTML(c, 'claude');
+  assert.match(h, /href="https:\/\/claude\.ai\/new\?q=You%20must%20explain/);
+  c.chips = ['bullets'];
+  assert.equal(result.sendText(c), 'You must explain why this fails.\n\nFormat the answer as bullet points.');
+  c.edited = 'My own version';
+  assert.equal(result.sendText(c), 'My own version');
+  assert.match(result.resultHTML(c, 'claude'), /will send your edited prompt/);
+});
+
+test('prompt adapter panel stays hidden when only generic chips apply', () => {
+  const AD = globalThis.AntRouter.adapter;
+  const c = pick('Fix this off-by-one bug in my Python loop');
+  c.ad = AD.adapt(c.text, c.chosen, c.d.task);
+  assert.ok(c.ad.chips.length > 0);
+  assert.doesNotMatch(result.resultHTML(c, 'any'), /class="adapt"/);
+  assert.equal(result.hasSuggestions(c.ad), false);
+});
+
+test('prompt adapter panel: skipped prompts say why, and prompts are escaped', () => {
+  const AD = globalThis.AntRouter.adapter;
+  const c = pick('Write a poem about <b>ants</b>');
+  c.ad = AD.adapt(c.text, c.chosen, c.d.task);
+  const h = result.resultHTML(c, 'any');
+  assert.match(h, /no suggestions \(creative writing/);
+  const d = pick('<img src=x onerror=alert(1)> CRITICAL: You MUST fix this bug');
+  d.ad = AD.adapt(d.text, d.chosen, d.d.task);
+  const hd = result.resultHTML(d, 'any');
+  assert.doesNotMatch(hd, /<img/);
+  assert.match(hd, /&lt;img src=x/);
+});
+
 test('platform mode lists only that family', () => {
   const h = result.resultHTML(pick('Fix this off-by-one bug in my Python loop', 'claude'), 'claude');
   assert.match(h, /data-id="opus"/);

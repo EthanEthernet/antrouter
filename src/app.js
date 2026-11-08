@@ -71,7 +71,9 @@
     if(mandu.busy()||Date.now()<routeLock){mandu.setStatus('still on the trail, one prompt at a time');play('nope');return}
     routeLock=Date.now()+600;
     const d=R.decide(text,platform,bias,weights());
-    current={text,d,chosen:d.order[0],original:d.order[0],rerouted:false,rated:false,second:false,opened:false};
+    current={text,d,chosen:d.order[0],original:d.order[0],rerouted:false,rated:false,second:false,opened:false,
+      useAdapted:false,chips:[],edited:null,editing:false,adaptOpen:false};
+    adaptFor(current);
     ledger.routes++;ledger.spent+=current.chosen.cost;ledger.flag+=30;S.set('ledger',ledger);
     mandu.routeTo(current.chosen);mandu.queueEat(current.chosen.fam);play('route');
     showTab('route');renderResult();renderTrails();
@@ -88,7 +90,7 @@
     S.set('bias',bias);
     ledger.reroutes++;ledger.spent+=m.cost-current.chosen.cost;S.set('ledger',ledger);
     mandu.queueEat(m.fam,from);
-    current.chosen=m;current.rerouted=true;current.rated=true;
+    current.chosen=m;current.rerouted=true;current.rated=true;adaptFor(current);
     mandu.puzzle(m);renderResult();renderTrails();play('hmm');
     loopDone.add('reveal');loopStep('steer');setTimeout(()=>loopStep('learn'),700);setTimeout(()=>loopStep('reward'),1400);
     game.rerouted(m.fam,{first,from});
@@ -96,11 +98,30 @@
   function good(){R.nudge(bias,current.d.key,current.chosen.id,0.03);S.set('bias',bias);current.rated=true;mandu.pet();renderResult();renderTrails();play('good');
     loopDone.add('reveal');loopStep('steer');setTimeout(()=>loopStep('learn'),700);setTimeout(()=>loopStep('reward'),1400);game.ratedGood()}
   function secondOpinion(){if(!current||current.second||!game.spend(SECOND_COST))return;current.second=true;play('coin');renderResult()}
-  function opened(){if(!current||current.opened)return;current.opened=true;game.opened()}
-  function copyPrompt(){const txt=current.text;let ok=false;try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>{},()=>{})}catch(e){}const n=$('copyNote');if(n)n.textContent=ok?'Prompt copied. Paste it into Gemini with Ctrl/Cmd+V.':'Copy the prompt from the box above, then paste it into Gemini.'}
+  function opened(){if(!current)return;logAdapter();if(current.opened)return;current.opened=true;game.opened()}
+  // ---- prompt adapter: suggestions for the chosen model; the user decides what gets sent ----
+  let adaptOn=S.get('adapt',true)!==false;
+  function adaptFor(c){if(!adaptOn){c.ad=null;return}
+    c.ad=A.adapter.adapt(c.text,c.chosen,c.d.task);c.chips=(c.chips||[]).filter(id=>c.ad.chips.some(x=>x.id===id));
+    if(A.result.hasSuggestions(c.ad)&&!c.adShown){c.adShown=true;bumpAdapter('shown')}}
+  function bumpAdapter(k){const s=S.get('adapter',{shown:0,accepted:0,edited:0,kept:0});s[k]=(s[k]||0)+1;S.set('adapter',s);renderAdapterStats()}
+  // Logged once per result, at hand-off: did the user send the suggestion, an edit of it, or their original?
+  function logAdapter(){if(!current||current.adLogged||!A.result.hasSuggestions(current.ad))return;current.adLogged=true;
+    bumpAdapter(!current.useAdapted?'kept':current.edited!=null?'edited':'accepted')}
+  function onAdapt(what,val){const c=current;if(!c)return;
+    if(what==='chip'){c.chips=c.chips.includes(val)?c.chips.filter(x=>x!==val):c.chips.concat(val);c.useAdapted=true;c.edited=null}
+    else if(what==='use')c.useAdapted=true;
+    else if(what==='original'){c.useAdapted=false;c.editing=false;c.edited=null}
+    else if(what==='edit'){c.useAdapted=true;c.editing=true;c.edited=A.result.sendText({...c,useAdapted:true})}
+    else if(what==='edited'){c.edited=val;const a=$('openLink');if(a)a.href=A.models.OPEN[c.chosen.open].url(val);
+      const st=document.querySelector('.adapt-state');if(st)st.textContent='Open in '+A.models.OPEN[c.chosen.open].label+' will send your edited prompt.';return}
+    c.adaptOpen=true;renderResult();if(what==='edit')$('adaptEdit')?.focus()}
+  function renderAdapterStats(){const s=S.get('adapter',{shown:0,accepted:0,edited:0,kept:0});
+    $('adapterStats').textContent=s.shown?`${s.shown} suggested · ${s.accepted} sent as suggested · ${s.edited} edited first · ${s.kept} sent as the original`:'No suggestions yet. Route a prompt with pasted text, CAPS rules or "think step by step" to see one.'}
+  function copyPrompt(){logAdapter();const txt=A.result.sendText(current);let ok=false;try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>{},()=>{})}catch(e){}const n=$('copyNote');if(n)n.textContent=ok?'Prompt copied. Paste it into Gemini with Ctrl/Cmd+V.':'Copy the prompt from the box above, then paste it into Gemini.'}
   function renderResult(){if(!current)return;
     $('result').innerHTML=A.result.resultHTML(current,platform,{scores:game.has('scores'),closecall:game.has('closecall'),secondCost:SECOND_COST,crumbs:game.state().crumbs});
-    A.result.bindResult($('result'),current,{onReroute:reroute,onGood:good,onCopy:copyPrompt,onSecond:secondOpinion,onOpen:opened})}
+    A.result.bindResult($('result'),current,{onReroute:reroute,onGood:good,onCopy:copyPrompt,onSecond:secondOpinion,onOpen:opened,onAdapt})}
 
   // ---- trails tab ----
   function renderTrails(){
@@ -218,13 +239,14 @@
 
   // ---- settings dialog ----
   const dlg=$('settings');
-  function syncSettings(){$('setCalm').checked=calm;$('setZot').checked=zotOn;$('setZot').disabled=calm;
+  function syncSettings(){$('setCalm').checked=calm;$('setZot').checked=zotOn;$('setZot').disabled=calm;$('setAdapt').checked=adaptOn;
     const mv=musicOn?Math.round(musicVol*100):0,sv=sfx.muted()?0:Math.round(sfx.volume()*100);
     $('setMusic').value=mv;$('setMusicOut').textContent=mv?mv+'%':'off';$('setSfx').value=sv;$('setSfxOut').textContent=sv?sv+'%':'off'}
   function setCalm(on){calm=on;S.set('calm',calm);document.documentElement.classList.toggle('calm',calm);mandu.setCalm(calm);if(screenMandu)screenMandu.setCalm(calm);syncSettings()}
   $('settingsBtn').onclick=()=>{syncSettings();$('saveNote').textContent='';dlg.showModal()};
   $('setCalm').onchange=e=>setCalm(e.target.checked);
   $('setZot').onchange=e=>{zotOn=e.target.checked;S.set('zot',zotOn)};
+  $('setAdapt').onchange=e=>{adaptOn=e.target.checked;S.set('adapt',adaptOn);if(current){adaptFor(current);if(!adaptOn)current.useAdapted=false;renderResult()}};
   $('setMusic').oninput=e=>{const v=+e.target.value/100;if(v>0){musicVol=v;music.volume=v;S.set('musicVol',v);if(!musicOn)setMusicOn(true)}else if(musicOn)setMusicOn(false);syncSettings()};
   $('setSfx').oninput=e=>{const v=+e.target.value/100;if(v>0){sfx.setVolume(v);if(sfx.muted())sfx.setMuted(false)}else sfx.setMuted(true);renderSound();syncSettings()};
   $('saveCopy').onclick=()=>{const code=S.exportSave();$('saveCode').value=code;$('saveCode').select();let ok=false;
@@ -238,7 +260,7 @@
     platform='any';renderPlat();current=null;$('result').innerHTML='<p class="empty">Tour in progress…</p>';renderTrails()}
   // After the tour or loading a save code: re-read everything from storage in place, no page reload.
   function restoreAll(){loadState();game.reload();mandu.loadBelly();loopReset();current=null;
-    calm=!!S.get('calm',false);zotOn=S.get('zot',true)!==false;dials=S.get('dials',{Q:6,S:2,C:2});setCalm(calm);
+    calm=!!S.get('calm',false);zotOn=S.get('zot',true)!==false;adaptOn=S.get('adapt',true)!==false;dials=S.get('dials',{Q:6,S:2,C:2});setCalm(calm);renderAdapterStats();
     $('result').innerHTML='<p class="empty">Route a prompt and Mandu will follow the trail to the best model among Claude, GPT and Gemini.</p>';
     renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();renderMusic();showTab('route');mandu.idleStatus()}
 
@@ -274,7 +296,7 @@
   // ---- first paint ----
   const saved=S.get('tab','route');
   showTab(TABS.includes(saved)?saved:'route');
-  renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();renderMusic();
+  renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();renderMusic();renderAdapterStats();
   if(S.get('away',false))setAway(true,true);
   // The extension popup skips the title screen.
   if(!POPUP)showLaunch();
