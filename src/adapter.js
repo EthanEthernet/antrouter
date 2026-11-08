@@ -47,7 +47,8 @@
     const paras=s=>s.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).forEach(p=>out.push({kind:'para',s:p}));
     while((m=re.exec(text))){paras(text.slice(last,m.index));out.push({kind:m[0][0]==='`'?'code':m[0].startsWith('<document>')?'doc':'example',s:m[0]});last=re.lastIndex}
     paras(text.slice(last));
-    out.forEach(b=>{if(b.kind==='para'&&(b.s.length>=280||b.s.split('\n').length>=6))b.kind='prose'});
+    const {PASTE_MIN,PASTE_LINES}=A.router;   // same "is this pasted?" threshold the router uses
+    out.forEach(b=>{if(b.kind==='para'&&(b.s.length>=PASTE_MIN||b.s.split('\n').length>=PASTE_LINES))b.kind='prose'});
     return out}
   const isData=b=>b.kind==='code'||b.kind==='doc'||b.kind==='prose';
 

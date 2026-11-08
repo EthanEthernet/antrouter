@@ -5,8 +5,8 @@
    code:{label:'code',re:/\b(code|function|bug|error|python|javascript|java|sql|api|regex|compile|refactor|debug|class|react|typescript|loop|schema|database)\b/gi},
    reason:{label:'reasoning & analysis',re:/\b(prove|why|calculate|solve|math|equation|probability|logic|plan|strategy|compare|tradeoffs?|analy[sz]e|derive|evaluate|explain)\b/gi},
    creative:{label:'creative writing',re:/\b(poems?|stor(y|ies)|lyrics|slogan|tagline|creative|character|script|essay|caption|rewrite|haikus?|limericks?|sonnets?|jokes?|songs?|verses?|rhymes?|fiction)\b/gi},
-   fact:{label:'quick fact',re:/(what is|what's|who is|who was|when did|when was|where is|define|capital of|how many|meaning of)/gi},
-   summarize:{label:'summarizing',re:/\b(summari[sz]e|tl;?dr|condense|key points|article|paper|pdf|document|notes|transcript)\b/gi},
+   fact:{label:'quick fact',re:/(what is(?! (?:this|it) about)|what's|who is|who was|when did|when was|where is|define|capital of|how many|meaning of)/gi},
+   summarize:{label:'summarizing',re:/\b(summari[sz]e|summary|tl;?dr|condense|(?:key|main) (?:points|ideas)|gist|overview|takeaways?|highlights|recap|what is (?:this|it) about|article|paper|pdf|document|notes|transcript)\b/gi},
    chat:{label:'everyday chat',re:/\b(hey|hi|thanks|help me|should i|advice|recommend|ideas?|feel)\b/gi}
   };
   const HARD=/\b(step by step|architecture|design|prove|edge cases?|optimi[sz]e|rigorous|in depth|detailed|tradeoffs?|multi-step|from scratch)\b/gi;
@@ -14,12 +14,21 @@
   const W={Q:0.6,S:0.2,C:0.2};
   const LMAX=Math.log(30),LMIN=Math.log(0.9);
 
+  // Pasted material (code blocks, or paragraphs of 280+ characters or 6+ lines) is what the prompt is about, not the
+  // request itself, so task keywords are read from the instruction only. The adapter uses the same threshold.
+  const PASTE_MIN=280, PASTE_LINES=6;
+  const isPaste=p=>p.length>=PASTE_MIN||p.split('\n').length>=PASTE_LINES;
+  function splitPaste(text){let code=false;const rest=text.replace(/```[\s\S]*?```/g,()=>{code=true;return'\n\n'});
+    const paras=rest.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+    return{instruction:paras.filter(p=>!isPaste(p)).join('\n\n'),prose:paras.some(isPaste),code}}
   // alt is a second task with at least half as many keyword hits: a sign the keywords disagree.
   function classify(text){
-    const hits=Object.keys(TASKS).map(k=>[k,(text.match(TASKS[k].re)||[]).length]).filter(h=>h[1]>0).sort((a,b)=>b[1]-a[1]);
-    const task=hits.length?hits[0][0]:text.trim().split(/\s+/).length<8?'fact':'chat';
+    const {instruction,prose,code}=splitPaste(text);
+    const hits=Object.keys(TASKS).map(k=>[k,(instruction.match(TASKS[k].re)||[]).length]).filter(h=>h[1]>0).sort((a,b)=>b[1]-a[1]);
+    // No task word in the instruction: a pasted text is something to read (summarize), a pasted code block is code.
+    const task=hits.length?hits[0][0]:prose?'summarize':code?'code':text.trim().split(/\s+/).length<8?'fact':'chat';
     const alt=hits.length>1&&hits[1][1]*2>=hits[0][1]?hits[1][0]:null;
-    let cx=0.25+Math.min(text.length/500,0.3)+(text.match(HARD)||[]).length*0.18;
+    let cx=0.25+Math.min(text.length/500,0.3)+(instruction.match(HARD)||[]).length*0.18;
     if(task==='fact'||task==='chat')cx-=0.1;if(task==='reason'||task==='code')cx+=0.1;
     return{task,alt,complexity:Math.max(0.1,Math.min(1,cx))};
   }
@@ -60,5 +69,5 @@
   function nudge(bias,key,id,a){bias[key]=bias[key]||{};bias[key][id]=Math.max(-0.3,Math.min(0.4,(bias[key][id]||0)+a));return bias}
   // Trails saved before learning was split by difficulty have no ":band" and are dropped once.
   function migrateBias(bias){const o={};for(const k in bias||{})if(/^[a-z]+:(easy|medium|hard)$/.test(k)&&TASKS[k.split(':')[0]])o[k]=bias[k];return o}
-  A.router={TASKS,BANDS,SAMPLES,W,classify,scoreModels,applyBias,allowedModels,rankModels,decide,nudge,trailKey,trailLabel,secondOpinion,migrateBias};
+  A.router={TASKS,BANDS,SAMPLES,W,PASTE_MIN,PASTE_LINES,splitPaste,classify,scoreModels,applyBias,allowedModels,rankModels,decide,nudge,trailKey,trailLabel,secondOpinion,migrateBias};
 })(globalThis.AntRouter = globalThis.AntRouter || {});
