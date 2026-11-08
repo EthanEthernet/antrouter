@@ -111,7 +111,9 @@ tests/                             node --test checks
 versions/v1-before-progression/    earlier build, before belly ants, window buttons, levels and shop
 docs/                              concept art, research, design spec and plan
 media/antrouter-1min-tour.mp4      recording of the 1-minute guided tour
+media/extension-demo.mp4           captioned demo of the extension popup (shown on extension.html)
 tools/record-tour.js               Playwright script that re-records the tour
+tools/record-extension-demo.py     Python Playwright script that re-records the extension demo (convert to MP4 with ffmpeg)
 ```
 
 ## Working on the code
