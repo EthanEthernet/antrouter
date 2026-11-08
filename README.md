@@ -72,6 +72,7 @@ After you pull new code (or download a fresh ZIP), go to `chrome://extensions` a
 | **Reroute** | Disagree? Tap another model. Mandu tilts his head and that trail gets stronger for that kind of prompt at that difficulty. |
 | **Good route** | Confirm a pick to reinforce it. |
 | **Second opinion** | Spend 6 crumbs to see why the runner-up lost and what it does better. Free on close calls from Lv3. |
+| **Prompt adapter** | When your prompt could be clearer for the model Mandu picked, a "Mandu suggests" panel shows each change, why (with its source), and a line diff. The five rules: question after pasted text (both ends for ChatGPT), `<document>` tags around pasted prose, toned-down CAPS/MUST (Claude, ChatGPT), no "think step by step" for the strongest tiers, and `<example>` tags on examples you wrote. Optional chips add a short-answer, more-detail or bullet-point request, or rephrase a few fixed "don't" phrases for Claude. **Your original is sent unless you pick the suggestion**; you can also edit it. Creative writing, edit/translate requests and sensitive topics are left alone. The Trails tab counts how often you sent the suggestion, edited it or kept your original. Turn it off in Settings. The evidence behind each rule is in [`docs/prompt-adapter-research.md`](docs/prompt-adapter-research.md). |
 | **Platform mode** | Tell Mandu which app you're in and he picks the right tier inside it. |
 | **Hand off** | Opens the prompt in Claude or ChatGPT pre-filled. For Gemini, the prompt is copied to paste. |
 | **Launch screen** | The website opens on a title screen with Mandu napping: Start (or Continue with your level and crumbs), the tour, New game and the sound toggle. |
@@ -101,7 +102,8 @@ src/audio.js                       synthesized sound effects, mute and volume
 src/router.js                      classify, score, learn from reroutes, explain (no page code)
 src/game.js                        XP, crumbs, levels, quests, badges, shop, session recap
 src/mandu.js                       Mandu's ASCII renderer and moods
-src/result.js                      the result card
+src/adapter.js                     the prompt adapter: sourced rules, chips and the line diff (no page code)
+src/result.js                      the result card, including the adapter panel
 src/tour.js                        the 1-minute guided tour
 src/app.js                         wires the page together: chat, tabs, panels, launch and exit screens
 icons/, tools/make-icons.ps1       extension icons and the script that draws them
@@ -118,7 +120,7 @@ tools/record-tour.js               Playwright script that re-records the tour
 - Don't put `<script>` code or `onclick="…"` attributes in `index.html`. Chrome extensions block them, so put code in `src/` instead.
 - `index.html` loads storage and theme in `<head>`, then models, audio, router, game, mandu, result, tour, app. A new file goes before the files that use it.
 - **Tests:** with Node installed, run `node --test` from this folder.
-- **Releasing:** browsers cache `css/` and `src/` for up to 10 minutes, so every page links them with a version tag (`app.css?v=7`). When you change CSS or JS, bump the number in `index.html` and `extension.html` together. `tests/assets.test.js` fails if a link is missing the tag or the pages disagree.
+- **Releasing:** browsers cache `css/` and `src/` for up to 10 minutes, so every page links them with a version tag (`app.css?v=8`). When you change CSS or JS, bump the number in `index.html` and `extension.html` together. `tests/assets.test.js` fails if a link is missing the tag or the pages disagree.
 
 ## How the router works (prototype)
 
