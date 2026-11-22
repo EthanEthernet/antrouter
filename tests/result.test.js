@@ -62,7 +62,7 @@ test('second opinion: a paid button, free on close calls at Tracker, then the co
   const close = pick('why is my Python loop slow');
   assert.match(result.resultHTML(close, 'any', { closecall: true, secondCost: 6 }), /class="second".*Runner-up/s);
   c.second = true;
-  assert.match(result.resultHTML(c, 'any', { secondCost: 6 }), /Claude Opus scored 77/);
+  assert.match(result.resultHTML(c, 'any', { secondCost: 6 }), /Claude Sonnet scored 84 to Claude Opus&#39;s 77|Claude Sonnet scored 84 to Claude Opus's 77/);
   assert.doesNotMatch(result.resultHTML(c, 'any', { secondCost: 6 }), /id="second"/);
 });
 
@@ -109,6 +109,33 @@ test('prompt adapter panel: skipped prompts say why, and prompts are escaped', (
   const hd = result.resultHTML(d, 'any');
   assert.doesNotMatch(hd, /<img/);
   assert.match(hd, /&lt;img src=x/);
+});
+
+test('the reroute thank-you uses "an" before a vowel (Playtest 3: "a everyday chat prompt")', () => {
+  const c = pick('hey, should i take a gap year?');
+  assert.equal(c.d.task, 'chat');
+  c.chosen = models.MODELS.find(m => m.id === 'opus'); c.rerouted = true; c.rated = true;
+  const h = result.resultHTML(c, 'any');
+  assert.match(h, /Next time an everyday chat prompt/);
+  assert.doesNotMatch(h, / a everyday/);
+});
+
+test('a tie on score says so instead of "0 points ahead"', () => {
+  const d = router.decide('Design the database schema for a ride-share app, handle edge cases', 'any', {});
+  assert.equal(d.final[d.order[0].id], d.final[d.order[1].id]);
+  const h = result.resultHTML({ text: 'x', d, chosen: d.order[0], original: d.order[0], rerouted: false, rated: false }, 'any');
+  assert.match(h, /Tied on score with Claude Sonnet/);
+  assert.doesNotMatch(h, /0 points ahead/);
+});
+
+test('says routing is local and that Open in sends the prompt (Playtest 3 privacy finding)', () => {
+  assert.match(result.resultHTML(pick('Fix this off-by-one bug in my Python loop'), 'any'), /Routing happens on your computer\. Open in sends your prompt to that app\./);
+});
+
+test('unlocked scores say what scale they use', () => {
+  const c = pick('Fix this off-by-one bug in my Python loop');
+  assert.match(result.resultHTML(c, 'any', { scores: true }), /Scores are out of 100/);
+  assert.doesNotMatch(result.resultHTML(c, 'any'), /Scores are out of 100/);
 });
 
 test('platform mode lists only that family', () => {

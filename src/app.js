@@ -39,7 +39,7 @@
   const getHud=()=>{const l=game.levelInfo();return{index:l.index,name:l.name,fill:Math.round(l.progress*8),crumbs:game.state().crumbs}};
   const mandu=A.mandu.createMandu({screen:$('screen'),status:$('status'),reduce,calm,store:S,maxFont:POPUP?5:13,getWorn,getHud,
     // Good route or a reroute already lit Steer, Learn and Reward, so the landing shouldn't jump the strip back to Reveal
-    onLanded:()=>{play('gulp');explainLanding();if(current&&current.rated)return;loopStep('reveal');setTimeout(()=>loopStep('reward'),900)},
+    onLanded:()=>{setRouteBusy(false);play('gulp');explainLanding();if(current&&current.rated)return;loopStep('reveal');setTimeout(()=>loopStep('reward'),900)},
     onBellyChange:()=>renderTrails()});
   // Mandu's status line says how sure the pick was, so his reaction carries the result, not just decoration.
   function explainLanding(){if(!current)return;const name=current.chosen.name.toLowerCase(),c=current.d.confidence;
@@ -57,7 +57,9 @@
 
   // ---- chat ----
   function renderPlat(){const box=$('plat');box.querySelectorAll('button').forEach(b=>b.remove());
-    PLATFORMS.forEach(pl=>{const b=document.createElement('button');b.textContent=pl.label;b.setAttribute('aria-pressed',platform===pl.id);b.onclick=()=>{platform=pl.id;S.set('platform',platform);renderPlat();mandu.setStatus(pl.fam?'working inside '+pl.label:'free to roam any app')};box.appendChild(b)})}
+    PLATFORMS.forEach(pl=>{const b=document.createElement('button');b.textContent=pl.label;b.setAttribute('aria-pressed',platform===pl.id);b.onclick=()=>{const changed=platform!==pl.id;platform=pl.id;S.set('platform',platform);renderPlat();mandu.setStatus(pl.fam?'working inside '+pl.label:'free to roam any app');
+      // An old pick from another app would be misleading (Playtest 3), so clear it and say what to do.
+      if(changed&&current){current=null;$('result').innerHTML=`<p class="empty">Now working in ${pl.fam?pl.label:'any app'}. Press Route prompt to get a pick${pl.fam?' inside '+pl.label:''}.</p>`}};box.appendChild(b)})}
   function clickPlat(label){[...$('plat').querySelectorAll('button')].find(b=>b.textContent===label)?.click()}
   function zot(){if(screenOpen)return;play('zot');mandu.zot();game.zotted()}
   const zotShortcut=()=>zotOn&&!calm;
@@ -66,7 +68,8 @@
   function weights(){if(!game.has('dials'))return null;const t=dials.Q+dials.S+dials.C;return t?{Q:dials.Q/t,S:dials.S/t,C:dials.C/t}:null}
   function doRoute(){
     const text=$('prompt').value.trim();
-    if(!text){showTab('route');$('result').innerHTML='<p class="empty">Type a prompt or tap a sample first.</p>';play('nope');return}
+    // Drop the old pick too, or the next progress update would redraw it over this message.
+    if(!text){showTab('route');current=null;$('result').innerHTML='<p class="empty">Type a prompt or tap a sample first.</p>';play('nope');return}
     // One prompt at a time: Mandu has to finish the trail before the next route counts.
     if(mandu.busy()||Date.now()<routeLock){mandu.setStatus('still on the trail, one prompt at a time');play('nope');return}
     routeLock=Date.now()+600;
@@ -79,9 +82,14 @@
     showTab('route');renderResult();renderTrails();
     loopStep('ask');loopStep('route');if(reduce){loopStep('reveal');loopStep('reward');explainLanding()}
     game.routed(current.chosen.fam,{platform,task:d.task});
+    if(!reduce&&mandu.busy())setRouteBusy(true);
     // Playtest 3: on laptops and in the popup the pick's buttons (Open in, Good route) landed below the fold.
     $('result').querySelector('.open')?.scrollIntoView({block:'nearest',behavior:reduce?'auto':'smooth'});
+    // Keyboard players land on the result, a few Tabs from Good route (Playtest 3: 30 Tabs from the prompt).
+    $('result').focus({preventScroll:true});
   }
+  // While Mandu finishes the trail, the Route button says so instead of silently ignoring clicks (Playtest 3).
+  function setRouteBusy(on){const b=$('go');b.disabled=on;b.textContent=on?'Mandu is eating…':'Route prompt'}
   function reroute(id){
     if(!current||current.chosen.id===id||!R.allowedModels(platform).some(m=>m.id===id))return;
     const m=MODELS.find(x=>x.id===id),key=current.d.key,first=!current.rerouted,from=current.chosen.fam;
@@ -98,7 +106,8 @@
     game.rerouted(m.fam,{first,from});
   }
   function good(){R.nudge(bias,current.d.key,current.chosen.id,0.03);S.set('bias',bias);current.rated=true;mandu.pet();renderResult();renderTrails();play('good');
-    loopDone.add('reveal');loopStep('steer');setTimeout(()=>loopStep('learn'),700);setTimeout(()=>loopStep('reward'),1400);game.ratedGood()}
+    loopDone.add('reveal');loopStep('steer');setTimeout(()=>loopStep('learn'),700);setTimeout(()=>loopStep('reward'),1400);game.ratedGood();
+    $('openLink')?.focus({preventScroll:true})}   // Good route is gone now; the next step is opening the pick
   function secondOpinion(){if(!current||current.second||!game.spend(SECOND_COST))return;current.second=true;play('coin');renderResult()}
   function opened(){if(!current)return;logAdapter();if(current.opened)return;current.opened=true;game.opened()}
   // ---- prompt adapter: suggestions for the chosen model; the user decides what gets sent ----
@@ -122,8 +131,12 @@
     $('adapterStats').textContent=s.shown?`${s.shown} suggested · ${s.accepted} sent as suggested · ${s.edited} edited first · ${s.kept} sent as the original`:'No suggestions yet. Route a prompt with pasted text, CAPS rules or "think step by step" to see one.'}
   function copyPrompt(){logAdapter();const txt=A.result.sendText(current);let ok=false;try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}try{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>{},()=>{})}catch(e){}const n=$('copyNote');if(n)n.textContent=ok?'Prompt copied. Paste it into Gemini with Ctrl/Cmd+V.':'Copy the prompt from the box above, then paste it into Gemini.'}
   function renderResult(){if(!current)return;
-    $('result').innerHTML=A.result.resultHTML(current,platform,{scores:game.has('scores'),closecall:game.has('closecall'),secondCost:SECOND_COST,crumbs:game.state().crumbs});
-    A.result.bindResult($('result'),current,{onReroute:reroute,onGood:good,onCopy:copyPrompt,onSecond:secondOpinion,onOpen:opened,onAdapt})}
+    // Redrawing replaces the card's buttons, so put keyboard focus back on the same control (or the card itself).
+    const r=$('result'),f=document.activeElement,inside=f&&r.contains(f)&&f!==r;
+    const sel=!inside?null:f.id?'#'+f.id:f.dataset.id?`[data-id="${f.dataset.id}"]`:f.dataset.chip?`[data-chip="${f.dataset.chip}"]`:null;
+    r.innerHTML=A.result.resultHTML(current,platform,{scores:game.has('scores'),closecall:game.has('closecall'),secondCost:SECOND_COST,crumbs:game.state().crumbs});
+    A.result.bindResult(r,current,{onReroute:reroute,onGood:good,onCopy:copyPrompt,onSecond:secondOpinion,onOpen:opened,onAdapt});
+    if(inside)((sel&&r.querySelector(sel))||r).focus({preventScroll:true})}
 
   // ---- trails tab ----
   function renderTrails(){
@@ -160,7 +173,8 @@
   function loopReset(){loopDone=new Set();loopOn=null;lapCounted=false;$('hint').innerHTML='<b>Start here:</b> type a prompt above, or tap a sample.';renderLoop()}
 
   // ---- progress and shop tabs ----
-  function renderHeader(){const l=game.levelInfo();$('hdrStats').textContent='Lv'+(l.index+1)+' '+l.name+' · '+game.state().crumbs+' crumbs'}
+  function renderHeader(){const l=game.levelInfo(),h=$('hdrStats');h.textContent='Lv'+(l.index+1)+' '+l.name+' · '+game.state().crumbs+' crumbs';
+    h.title='Mandu\'s level ('+l.name+') rises with XP and unlocks routing tools. Crumbs are points you spend in the Shop.'}
   function renderQuests(){const p=game.state(),Q0=A.game.QUESTS;$('qdone').textContent=p.qdone+' quest'+(p.qdone===1?'':'s')+' done';
     $('quests').innerHTML=p.quests.map(q=>{const Q=Q0[q.id];const pct=Math.min(100,Math.round(q.n/Q.goal*100));
       return `<div class="q${newQ===q.id?' new':''}"><b>${Q.t}</b><div class="qbar"><span style="width:${pct}%"></span></div><div class="meta"><span>${Math.min(q.n,Q.goal)} / ${Q.goal}</span><span>+${Q.rw} crumbs</span></div></div>`}).join('')}
@@ -272,7 +286,12 @@
   game.on('levelup',e=>{play('levelup');mandu.levelUp(e.name);toast('Level up! Mandu is now a '+e.name+'.'+(e.feature?' Unlocked: '+e.feature.split(':')[0]+'.':'')+(e.unlocked.length?' New in the shop: '+e.unlocked.join(', '):''),true);renderTrails()});
   game.on('quest',e=>{play('quest');newQ=e.next;clearTimeout(clearNewQ);clearNewQ=setTimeout(()=>{newQ=null},700);flagProgress()});
   game.on('badge',()=>{play('badge');flagProgress()});
-  R.SAMPLES.forEach(x=>{const b=document.createElement('button');b.textContent=x;b.onclick=()=>{$('prompt').value=x;doRoute()};$('samples').appendChild(b)});
+  // A sample routes at once into an empty box. If the player has typed their own text, the sample only replaces it
+  // (through the editor, so Ctrl/Cmd+Z brings the text back) and waits for Route prompt (Playtest 3).
+  R.SAMPLES.forEach(x=>{const b=document.createElement('button');b.textContent=x;b.onclick=()=>{const ta=$('prompt'),own=ta.value.trim()&&!R.SAMPLES.includes(ta.value.trim());
+    if(!own){ta.value=x;doRoute();return}
+    ta.focus();ta.select();if(!document.execCommand('insertText',false,x))ta.value=x;
+    $('hint').innerHTML='<b>Sample loaded.</b> Press <b>Route prompt</b> to send it, or Ctrl/Cmd+Z to get your text back.'};$('samples').appendChild(b)});
   $('go').onclick=()=>doRoute();
   if(/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent))$('kbdMod').textContent='⌘';
   $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))doRoute()});
@@ -289,17 +308,18 @@
   $('tourStop').onclick=()=>A.tour.stop();$('tourPause').onclick=()=>A.tour.pause();$('tourNext').onclick=()=>A.tour.next();
   document.querySelectorAll('[data-sound]').forEach(b=>b.onclick=()=>{sfx.setMuted(!sfx.muted());renderSound()});
   document.querySelectorAll('[data-music]').forEach(b=>b.onclick=()=>setMusicOn(!musicOn));
-  $('launchStart').onclick=()=>{game.startSession();play('start');playMusic();screenMandu.wake();setTimeout(closeScreen,reduce?0:450)};
+  // Start picks up a session from the last 30 minutes (a reload no longer zeroes the recap); Back to title ends it.
+  $('launchStart').onclick=()=>{game.resumeSession();play('start');playMusic();screenMandu.wake();setTimeout(()=>{closeScreen();$('prompt').focus()},reduce?0:450)};
   $('launchTour').onclick=()=>{closeScreen();$('tourBtn').click()};
   $('launchNew').onclick=()=>armed($('launchNew'),()=>{game.reset();resetTrails();loopReset();showLaunch()});
   $('exitResume').onclick=()=>{closeScreen();playMusic()};
-  $('exitBack').onclick=()=>showLaunch();
+  $('exitBack').onclick=()=>{game.endSession();showLaunch()};
 
   // ---- first paint ----
   const saved=S.get('tab','route');
   showTab(TABS.includes(saved)?saved:'route');
   renderPlat();renderHeader();renderProg();renderQuests();renderLoop();renderTrails();renderSound();renderMusic();renderAdapterStats();
   if(S.get('away',false))setAway(true,true);
-  // The extension popup skips the title screen.
-  if(!POPUP)showLaunch();
+  // The extension popup skips the title screen, so it picks up the session here.
+  if(!POPUP)showLaunch();else game.resumeSession();
 })(globalThis.AntRouter = globalThis.AntRouter || {});

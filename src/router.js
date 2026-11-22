@@ -51,7 +51,10 @@
     const edge=(x,y)=>[x.q[d.task]>y.q[d.task]&&'better at '+L,x.speed>y.speed&&'faster',x.cost<y.cost&&'cheaper'].filter(Boolean);
     const list=l=>l.length>1?l.slice(0,-1).join(', ')+' and '+l[l.length-1]:l[0];
     const forB=edge(b,a),forA=edge(a,b);
-    return`${b.name} scored ${d.final[b.id]} to ${a.name}'s ${d.final[a.id]}. `+(forB.length?`It's ${list(forB)}`:'It has no clear edge here')+(forA.length?`, while ${a.name} is ${list(forA)}.`:'.')}
+    // Lead with the pick (a) and why it won, then what the runner-up (b) does better.
+    const head=`${a.name} scored ${d.final[a.id]} to ${b.name}'s ${d.final[b.id]}. `;
+    if(forA.length)return head+`${a.name} is ${list(forA)}`+(forB.length?`, which outweighs ${b.name} being ${list(forB)}.`:'.');
+    return head+(forB.length?`${a.name} wins on balance, though ${b.name} is ${list(forB)}.`:'Neither has a clear edge here.')}
   function allowedModels(platformId){const f=PLATFORMS.find(x=>x.id===platformId).fam;return MODELS.filter(m=>!f||m.fam===f)}
   function rankModels(scores,platformId){return allowedModels(platformId).sort((a,b)=>scores[b.id]-scores[a.id])}
   // Explains why r fits on its own merits; decide() only calls it when no learned trail changed the pick.

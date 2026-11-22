@@ -35,7 +35,7 @@
     const fams=[...new Set(allowedModels(platformId).map(m=>m.fam))];
     fams.forEach(f=>{bars+=`<div class="fam">${f}${fams.length===1?' (you are in this app)':''}</div><div class="chips">`;MODELS.filter(m=>m.fam===f).forEach(m=>{
       const on=m.id===chosen.id;bars+=`<div class="chip${on?' on':''}" role="button" tabindex="0" data-id="${m.id}" aria-label="Reroute to ${m.name}" style="--c:${m.color}"><span class="sw" style="background:${m.color}"></span>${m.name}${opts.scores?`<span class="score">${d.final[m.id]}</span>`:''}</div>`});bars+='</div>'});
-    const why=conf.level==='close'?(d.alt?` The prompt reads as both ${TASKS[d.task].label} and ${TASKS[d.alt].label}.`:` Only ${conf.margin} point${conf.margin===1?'':'s'} ahead of ${runner.name}.`):'';
+    const why=conf.level==='close'?(d.alt?` The prompt reads as both ${TASKS[d.task].label} and ${TASKS[d.alt].label}.`:conf.margin===0?` Tied on score with ${runner.name}.`:` Only ${conf.margin} point${conf.margin===1?'':'s'} ahead of ${runner.name}.`):'';
     const freeSecond=opts.closecall&&conf.level==='close'&&!rerouted;
     let second='';
     if((current.second||freeSecond)&&runner!==chosen)second=`<div class="second"><b>Runner-up${freeSecond&&!current.second?' (close-call alert)':''}</b><p>${esc(secondOpinion(d,chosen,runner))}</p></div>`;
@@ -44,13 +44,14 @@
       <h3><span class="sw" style="background:${chosen.color}"></span>${chosen.name}</h3>
       <div class="meta">Reads as ${TASKS[d.task].label}, complexity ${d.complexity<0.4?'low':d.complexity<0.7?'medium':'high'}. Runner-up: ${runner.name}.</div>
       ${rerouted?'':`<p class="sure ${conf.level}"><b>${SURE[conf.level]}.</b>${why}</p>`}
-      <p class="reason">${rerouted?'Got it. Next time a '+TASKS[d.task].label+' prompt like this comes in, the trail to '+esc(chosen.name)+' will be a little stronger.':esc(d.reason)}</p>
+      <p class="reason">${rerouted?'Got it. Next time '+(/^[aeiou]/i.test(TASKS[d.task].label)?'an ':'a ')+TASKS[d.task].label+' prompt like this comes in, the trail to '+esc(chosen.name)+' will be a little stronger.':esc(d.reason)}</p>
       ${second}
-      <div class="bars">${bars}</div>
+      <div class="bars">${bars}${opts.scores?'<p class="meta">Scores are out of 100: how well each model fits this prompt.</p>':''}</div>
       ${adapterHTML(current)}
       <div class="open"><a id="openLink" href="${esc(o.url(sendText(current)))}" target="_blank" rel="noopener">Open in ${o.label}</a>
       ${current.rated?'':'<button id="good">Good route</button>'}<span class="meta">Wrong trail? Tap another model above to reroute.</span></div>
-      ${chosen.open==='gemini'?'<button id="copyBtn" type="button" style="margin-left:8px">Copy prompt</button><p class="meta" id="copyNote" style="margin-top:8px">Gemini can\'t receive a prompt through a link, so AntRouter copies it for you. Paste it into Gemini with Ctrl/Cmd+V.</p>':''}</div>`;
+      ${chosen.open==='gemini'?'<button id="copyBtn" type="button" style="margin-left:8px">Copy prompt</button><p class="meta" id="copyNote" style="margin-top:8px">Gemini can\'t receive a prompt through a link, so AntRouter copies it for you. Paste it into Gemini with Ctrl/Cmd+V.</p>':''}
+      <p class="meta privacy">Routing happens on your computer. Open in sends your prompt to that app.</p></div>`;
   }
   function bindResult(el,current,h){
     el.querySelectorAll('.chip').forEach(c=>{const go=()=>h.onReroute(c.dataset.id);c.onclick=go;c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});

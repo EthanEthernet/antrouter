@@ -11,7 +11,7 @@
    {id:'bandana',name:'UCI bandana',ico:'===',cost:30,lvl:2,desc:'Blue-and-gold neck bandana. Zot!'},
    {id:'shades',name:'Cool shades',ico:'█-█',cost:40,lvl:3,desc:'For routing in style.'},
    {id:'gold',name:'Golden trail',ico:'ж ж',cost:60,lvl:4,desc:'Idle ants glitter gold.'}];
-  const BADGES=[{id:'first',n:'First trail'},{id:'reroute',n:'Second opinion'},{id:'good',n:'Good nose'},{id:'tri',n:'Tri-colony'},{id:'zot',n:'Zot!'},{id:'full',n:'Full belly'},{id:'dress',n:'Dressed up'}];
+  const BADGES=[{id:'first',n:'First trail'},{id:'reroute',n:'Changed my mind'},{id:'good',n:'Good nose'},{id:'tri',n:'Tri-colony'},{id:'zot',n:'Zot!'},{id:'full',n:'Full belly'},{id:'dress',n:'Dressed up'}];
   const QUESTS={r3:{t:'Route 3 prompts',type:'route',goal:3,rw:8},rr1:{t:'Reroute a pick you disagree with',type:'reroute',goal:1,rw:6},
    g1:{t:'Mark a Good route',type:'good',goal:1,rw:5},p1:{t:'Route inside one app (pick Claude, ChatGPT or Gemini first)',type:'plat',goal:1,rw:6},
    c1:{t:'Route a coding prompt',type:'code',goal:1,rw:5},f3:{t:'Feed Mandu ants from all 3 families',type:'fam',goal:3,rw:10},
@@ -28,14 +28,22 @@
     const ls={};
     const on=(ev,fn)=>{(ls[ev]=ls[ev]||[]).push(fn)};
     const emit=(ev,data)=>{(ls[ev]||[]).forEach(fn=>fn(data))};
-    // This session only (not saved): feeds the recap on the exit screen.
+    // This session: feeds the recap on the exit screen. It is saved, so a reload or a closed popup carries on the
+    // same session (Playtest 3); it ends after 30 idle minutes or when the player goes back to the title.
+    const IDLE=30*60*1000;
     const snap=now=>({at:now||Date.now(),xp:prog.xp,level:lvlIndex(prog.xp),badges:prog.badges.slice(),laps:prog.laps,routes:0,reroutes:0,goods:0,earned:0,spent:0,belly:{Claude:0,GPT:0,Gemini:0}});
     let session=snap();
-    function startSession(now){session=snap(now)}
+    const keepSession=()=>{session.last=Date.now();store.set('session',session)};
+    function startSession(now){session=snap(now);keepSession()}
+    // Picks up the saved session if it was active in the last 30 minutes, otherwise starts a new one.
+    function resumeSession(now){now=now||Date.now();const s=store.get('session',null);
+      if(s&&typeof s==='object'&&s.belly&&now-(s.last||s.at)<IDLE){session=s;return true}
+      startSession(now);return false}
+    function endSession(){store.set('session',null);session=snap()}
     function sessionSummary(now){const s=session;
       return{ms:(now||Date.now())-s.at,routes:s.routes,reroutes:s.reroutes,goods:s.goods,laps:prog.laps-s.laps,xp:prog.xp-s.xp,earned:s.earned,spent:s.spent,
         levelFrom:LEVELS[s.level].n,levelTo:LEVELS[lvlIndex(prog.xp)].n,badges:prog.badges.filter(b=>!s.badges.includes(b)).map(id=>BADGES.find(x=>x.id===id).n),belly:{...s.belly}}}
-    function save(){store.set('prog',prog);emit('change')}
+    function save(){store.set('prog',prog);keepSession();emit('change')}
     function levelInfo(){const i=lvlIndex(prog.xp),L0=LEVELS[i],L1=LEVELS[i+1]||null;return{index:i,name:L0.n,xp:prog.xp,next:L1,progress:L1?(prog.xp-L0.xp)/(L1.xp-L0.xp):1}}
     function award(xp,cr){const before=lvlIndex(prog.xp);prog.xp+=xp;prog.crumbs+=cr;session.earned+=cr;const after=lvlIndex(prog.xp);save();
       if(after>before)emit('levelup',{name:LEVELS[after].n,feature:LEVELS[after].unlock||'',unlocked:SHOP.filter(s=>s.lvl===after+1).map(s=>s.name)})}
@@ -55,7 +63,7 @@
     // Only the first reroute of a result pays, so flipping between chips can't farm XP.
     function rerouted(fam,o){o=o||{};addFam(fam);if(o.from&&session.belly[o.from]>0)session.belly[o.from]--;session.belly[fam]++;
       if(o.first!==false){session.reroutes++;award(10,3);quest('reroute');badge('reroute')}
-      quest('fam',prog.fams.length,true);if(prog.fams.length>=3)badge('tri')}
+      quest('fam',prog.fams.length,true);if(prog.fams.length>=3)badge('tri');keepSession()}
     function ratedGood(){session.goods++;award(10,4);quest('good');badge('good')}
     function opened(){award(5,2);quest('open')}
     function spend(cost){if(prog.crumbs<cost)return false;prog.crumbs-=cost;session.spent+=cost;save();quest('spend');return true}
@@ -67,8 +75,8 @@
     const wearing=id=>!!prog.worn[id];
     function addLap(){prog.laps++;award(5,3)}
     function reset(){prog=freshProg();session=snap();save()}
-    function reload(){prog=load();session=snap();emit('change')}
-    return{on,state:()=>prog,levelInfo,has,wearing,routed,rerouted,ratedGood,opened,spend,zotted,canBuy,buy,toggleWear,addLap,reset,reload,startSession,sessionSummary};
+    function reload(){prog=load();resumeSession();emit('change')}
+    return{on,state:()=>prog,levelInfo,has,wearing,routed,rerouted,ratedGood,opened,spend,zotted,canBuy,buy,toggleWear,addLap,reset,reload,startSession,resumeSession,endSession,sessionSummary};
   }
   A.game={createGame,LEVELS,SHOP,BADGES,QUESTS};
 })(globalThis.AntRouter = globalThis.AntRouter || {});
