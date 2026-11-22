@@ -176,6 +176,41 @@ test('the session recap counts only this session', () => {
   assert.ok(s.badges.includes('First trail'));
 });
 
+// Playtest 3: the recap reset on every reload and every time the popup closed.
+test('the session survives a reload or a closed popup', () => {
+  const store = memStore(), t = Date.now();
+  const g1 = G.createGame(store);
+  g1.startSession(t);
+  g1.routed('Claude', { platform: 'any', task: 'code' });
+  g1.routed('GPT', { platform: 'any', task: 'fact' });
+  const g2 = G.createGame(store);
+  assert.equal(g2.resumeSession(t + 60000), true);
+  const s = g2.sessionSummary(t + 60000);
+  assert.equal(s.routes, 2);
+  assert.equal(s.ms, 60000);
+});
+
+test('a session left alone for 30 minutes ends, and so does going back to the title', () => {
+  const store = memStore(), t = Date.now();
+  const g1 = G.createGame(store);
+  g1.startSession(t);
+  g1.routed('Claude', { platform: 'any', task: 'code' });
+  const late = G.createGame(store);
+  assert.equal(late.resumeSession(Date.now() + 31 * 60000), false);
+  assert.equal(late.sessionSummary().routes, 0);
+  const g3 = G.createGame(store);
+  g3.startSession(t);
+  g3.routed('Claude', { platform: 'any', task: 'code' });
+  g3.endSession();
+  const g4 = G.createGame(store);
+  assert.equal(g4.resumeSession(Date.now()), false);
+  assert.equal(g4.sessionSummary().routes, 0);
+});
+
+test('the reroute badge has its own name, not the paid Second opinion button\'s', () => {
+  assert.equal(G.BADGES.find(b => b.id === 'reroute').n, 'Changed my mind');
+});
+
 test('reset wipes progress and emits change', () => {
   const g = G.createGame(memStore({ prog: { xp: 200, crumbs: 99 } }));
   let changes = 0; g.on('change', () => changes++);

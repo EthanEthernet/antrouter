@@ -141,10 +141,11 @@ test('confidence comes from the gap between the top two picks', () => {
   assert.equal(c.margin, 7);
 });
 
-test('second opinion explains the runner-up against the pick', () => {
+// Playtest 3: the old wording led with the runner-up ("It's better at code"), so the loser sounded like the winner.
+test('second opinion leads with why the pick won, then what the runner-up does better', () => {
   const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', {});
   const s = router.secondOpinion(d, d.order[0], d.order[1]);
-  assert.equal(s, "Claude Opus scored 77 to Claude Sonnet's 84. It's better at code, while Claude Sonnet is faster and cheaper.");
+  assert.equal(s, "Claude Sonnet scored 84 to Claude Opus's 77. Claude Sonnet is faster and cheaper, which outweighs Claude Opus being better at code.");
 });
 
 test('priority weights change the pick: caring only about cost picks the cheapest model', () => {

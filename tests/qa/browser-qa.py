@@ -61,7 +61,7 @@ with sync_playwright() as p:
         pg.screenshot(path=os.path.join(SH, '02-after-samples.png'), full_page=True)
         pg.fill('#prompt', 'What is 2+2?'); pg.click('#go')
         pg.fill('#prompt', 'Write a haiku about rain'); pg.click('#go'); pg.wait_for_timeout(300)
-        rec('Second route during animation', None, 'status line: "' + pg.inner_text('#status') + '", Route button disabled: ' + str(pg.is_disabled('#go')))
+        rec('Route button says Mandu is busy during the animation', pg.is_disabled('#go') and 'eating' in pg.inner_text('#go'), 'button: "' + pg.inner_text('#go') + '", disabled: ' + str(pg.is_disabled('#go')))
         pg.wait_for_timeout(4500)
         route(pg, 'Fix this off-by-one bug in my Python loop')
         for _ in range(4):
@@ -82,7 +82,8 @@ with sync_playwright() as p:
         route(pg, "What's the capital of Australia?")
         rec('Open-in link', None, pg.get_attribute('#openLink', 'href'))
         body = pg.inner_text('body').lower()
-        rec('Privacy note: routing is local / Open-in sends the prompt', 'privacy' in body or 'on your computer' in body or 'nothing leaves' in body, 'no such line on the main screen')
+        ok = 'on your computer' in body
+        rec('Privacy note: routing is local / Open-in sends the prompt', ok, '' if ok else 'no such line on the main screen')
         pg.click('#endBtn'); pg.wait_for_timeout(500); before = pg.inner_text('#recap'); pg.click('#exitResume')
         pg.reload(); pg.wait_for_timeout(500); start(pg); pg.click('#endBtn'); pg.wait_for_timeout(500); after = pg.inner_text('#recap')
         rb = re.search(r'Prompts routed\s*(\d+)', before).group(1); ra = re.search(r'Prompts routed\s*(\d+)', after).group(1)
@@ -128,11 +129,13 @@ with sync_playwright() as p:
     safe('Theme', theme)
 
     def keyboard_tour():
-        ctx, pg, errs, bad = new(b); start(pg); route(pg, 'Fix this off-by-one bug in my Python loop')
-        pg.focus('#prompt'); n = 0
+        # A keyboard player types, presses Ctrl+Enter, then Tabs from wherever focus lands.
+        ctx, pg, errs, bad = new(b); start(pg)
+        pg.focus('#prompt'); pg.keyboard.type('Fix this off-by-one bug in my Python loop'); pg.keyboard.press('Control+Enter'); pg.wait_for_timeout(4500)
+        n = 0
         while n < 80 and pg.evaluate('document.activeElement.id') != 'good':
             pg.keyboard.press('Tab'); n += 1
-        rec('Keyboard: Tab presses from prompt to Good route', n <= 15, f'{n} presses')
+        rec('Keyboard: Tab presses from Ctrl+Enter to Good route', n <= 15, f'{n} presses')
         pg.focus('#good'); pg.keyboard.press('Enter'); pg.wait_for_timeout(300)
         rec('Focus kept after Good route', pg.evaluate('document.activeElement.tagName') != 'BODY', 'focus on: ' + pg.evaluate('document.activeElement.id||document.activeElement.tagName'))
         lvl = pg.inner_text('#hdrStats'); pg.click('#tourBtn'); pg.wait_for_timeout(7000); pg.click('#tourStop'); pg.wait_for_timeout(1500)
@@ -153,9 +156,14 @@ with sync_playwright() as p:
         ctx, pg, errs, bad = new(b); start(pg); route(pg, "What's the capital of Australia?")
         old = pg.inner_text('#result h3')
         pg.click('#plat button:has-text("ChatGPT")'); pg.wait_for_timeout(300)
-        rec('Switching app clears or updates the old pick', 'GPT' in pg.inner_text('#result h3') if pg.locator('#result h3').count() else True, f'still shows "{old}" after switching to ChatGPT')
-        pg.fill('#prompt', 'my own half-written prompt'); pg.click('#samples button:nth-child(1)'); pg.wait_for_timeout(300)
-        rec('Sample click keeps text the player typed', 'half-written' in pg.input_value('#prompt'), 'box now: "' + pg.input_value('#prompt') + '"')
+        rec('Switching app clears or updates the old pick', 'GPT' in pg.inner_text('#result h3') if pg.locator('#result h3').count() else True, pg.inner_text('#result')[:80].replace('\n', ' '))
+        # With the player's own text in the box, a sample replaces it without routing, and Ctrl+Z brings it back.
+        pg.click('#prompt'); pg.keyboard.press('Control+a'); pg.keyboard.press('Delete'); pg.keyboard.type('my own half-written prompt')
+        before = pg.inner_text('#bellySplit'); pg.click('#samples button:nth-child(1)'); pg.wait_for_timeout(300)
+        loaded = pg.input_value('#prompt'); routed = pg.inner_text('#bellySplit') != before
+        pg.focus('#prompt'); pg.keyboard.press('Control+z'); pg.wait_for_timeout(200); undone = pg.input_value('#prompt')
+        rec('Sample tap over typed text waits for Route, and undo restores the text', not routed and loaded != 'my own half-written prompt' and 'half-written' in undone,
+            f'routed: {routed}, after tap: "{loaded[:40]}", after Ctrl+Z: "{undone}"')
         pg.wait_for_timeout(4500)
         pg.click('#tab-progress'); pg.wait_for_timeout(200)
         rec('Badge names', None, pg.inner_text('#badges').replace('\n', ' '))

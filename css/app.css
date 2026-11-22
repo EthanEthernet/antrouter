@@ -191,6 +191,7 @@ textarea::placeholder{color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
 .tab.has-news::after{top:4px;right:6px;box-shadow:0 0 0 2px var(--bg)}
 .tabbar .tourbtn{margin:0 0 0 auto}
+@media (max-width:480px){.tabbar{flex-wrap:wrap}.tabs{flex:1 1 100%;justify-content:space-between}.tab,.tab:hover,.tab[aria-selected="true"]{padding:9px 8px}}  /* Playtest 3: at 375px the tab bar clipped Shop and About */
 .chip{background:var(--surface-2);border-color:var(--rule)}
 .chip.on{background:color-mix(in srgb,var(--c) 22%,transparent);border-color:var(--c)}
 .st{border-color:var(--rule)}

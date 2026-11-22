@@ -39,7 +39,7 @@
       cap('ZOT!','Fellow Anteaters: press Zot! (or type zot).');app.clickPlat('Any app');$('zot').click();await sleep(3600);
       cap('LOOP','That is the loop: Ask, Route, Reveal, Steer, Learn, level up. Your turn!');app.showTab('route');await sleep(4200);
     }catch(e){}
-    A.storage.endSandbox();app.restoreAll();
+    A.storage.endSandbox();app.restoreAll();$('prompt').value='';   // the tour typed in the box; leave it empty for the player
     touring=false;$('tourbar').classList.remove('on');$('tourBtn').disabled=false;$('endBtn').disabled=false;$('tourBtn').focus();
   }
   function stop(){abort=true;$('tourCap').textContent='Stopping…'}
