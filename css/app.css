@@ -200,6 +200,7 @@ textarea::placeholder{color:var(--muted)}
 .qbar span{background:linear-gradient(90deg,var(--accent),var(--pink))}
 .badge.on{border-color:var(--accent);background:var(--accent-soft)}
 .term{border-radius:20px;box-shadow:0 18px 40px -18px rgba(10,6,30,.55)}
+.term[data-scene="night"]{background:#060A1C}.term[data-scene="desert"]{background:#1C130B}.term[data-scene="campus"]{background:#081428}  /* shop scenes (mandu.js paints the props) */
 .toast{border-radius:16px;box-shadow:0 14px 34px -12px rgba(0,0,0,.5)}
 .hdr-btn{padding:7px 12px;font:600 13px/1 "Public Sans",sans-serif;background:var(--surface);box-shadow:var(--shadow)}
 .hdr-btn:disabled{opacity:.5;cursor:not-allowed}

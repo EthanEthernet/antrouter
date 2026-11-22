@@ -189,7 +189,7 @@
     $('badges').innerHTML=BADGES.map(b=>`<span class="badge${p.badges.includes(b.id)?' on':''}">${p.badges.includes(b.id)?'★ ':'☆ '}${b.n}</span>`).join('');
     $('shop').innerHTML=SHOP.map(it=>{const own=p.owned.includes(it.id),locked=li+1<it.lvl,afford=p.crumbs>=it.cost;
       const btn=own?`<button data-wear="${it.id}">${game.wearing(it.id)?'Take off':'Wear'}</button>`:locked?`<button disabled>Unlocks at Lv${it.lvl} ${LEVELS[it.lvl-1].n}</button>`:`<button data-buy="${it.id}" ${afford?'':'disabled'}>Buy for ${it.cost} crumbs</button>`;
-      return `<div class="item${game.wearing(it.id)?' worn':''}"><div class="ico" style="color:${it.id==='bandana'?UBLUE:it.id==='gold'?UGOLD:it.id==='shades'?'#8B96AE':'#FF6FA3'}">${esc(it.ico)}</div><b>${it.name}</b><span class="meta">${it.desc}</span>${btn}</div>`}).join('');
+      return `<div class="item${game.wearing(it.id)?' worn':''}"><div class="ico" style="color:${({bandana:UBLUE,gold:UGOLD,shades:'#8B96AE',night:'#C9D6FF',desert:'#C9925A',campus:UGOLD,grad:UGOLD})[it.id]||'#FF6FA3'}">${esc(it.ico)}</div><b>${it.name}</b><span class="meta">${it.desc}</span>${btn}</div>`}).join('');
     $('shop').querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const it=SHOP.find(x=>x.id===b.dataset.buy);if(!game.canBuy(it.id))return;
       // toast first so a badge earned by the purchase shows on top of it
       toast('Bought '+it.name+'! Mandu is wearing it.',true);game.buy(it.id);play('coin');mandu.pet();loopStep('customize')});

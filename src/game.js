@@ -1,16 +1,23 @@
 // Progress: XP, crumbs, levels, quests, badges and the gear shop. No page access: the page listens to events.
 (function (A) {
   // Each level unlocks something that changes how routing works, not just a hat.
+  // Thresholds and prices were raised after Playtest 3 (Lv4 by route 9, the whole shop by route 8). A player who decides
+  // every loop now reaches Lv4 around route 17 and can afford the whole shop around route 28 (tests/game.test.js).
   const LEVELS=[{n:'Pup',xp:0},
-   {n:'Forager',xp:60,feature:'scores',unlock:'Score bars: see every model\'s score on each pick'},
-   {n:'Tracker',xp:160,feature:'closecall',unlock:'Close-call alerts: on close calls Mandu shows the runner-up and why, for free'},
-   {n:'Trailblazer',xp:300,feature:'dials',unlock:'Priority dials: tell Mandu how much you care about quality, speed and cost'}];
+   {n:'Forager',xp:120,feature:'scores',unlock:'Score bars: see every model\'s score on each pick'},
+   {n:'Tracker',xp:320,feature:'closecall',unlock:'Close-call alerts: on close calls Mandu shows the runner-up and why, for free'},
+   {n:'Trailblazer',xp:600,feature:'dials',unlock:'Priority dials: tell Mandu how much you care about quality, speed and cost'}];
+  // slot: items in the same slot replace each other when worn (one scene at a time; one thing on the head).
   const SHOP=[
    {id:'bow',name:'Tail bow',ico:'>@<',cost:10,lvl:1,desc:'A pink bow where the tail meets the rump.'},
-   {id:'hat',name:'Party hat',ico:'/\\',cost:20,lvl:1,desc:'Striped cone hat with a gold pompom.'},
+   {id:'hat',name:'Party hat',ico:'/\\',cost:20,lvl:1,slot:'head',desc:'Striped cone hat with a gold pompom.'},
    {id:'bandana',name:'UCI bandana',ico:'===',cost:30,lvl:2,desc:'Blue-and-gold neck bandana. Zot!'},
+   {id:'night',name:'Night sky',ico:'.*.',cost:80,lvl:2,slot:'scene',desc:'A scene: twinkling stars and a crescent moon behind Mandu.'},
    {id:'shades',name:'Cool shades',ico:'█-█',cost:40,lvl:3,desc:'For routing in style.'},
-   {id:'gold',name:'Golden trail',ico:'ж ж',cost:60,lvl:4,desc:'Idle ants glitter gold.'}];
+   {id:'desert',name:'Desert ant hill',ico:'/^\\',cost:110,lvl:3,slot:'scene',desc:'A scene: dunes, a cactus and an ant hill on the horizon.'},
+   {id:'gold',name:'Golden trail',ico:'ж ж',cost:60,lvl:4,desc:'Idle ants glitter gold.'},
+   {id:'campus',name:'UCI campus',ico:'▐█▌',cost:140,lvl:4,slot:'scene',desc:'A scene: a blue-and-gold campus skyline with lit windows.'},
+   {id:'grad',name:'Graduation cap',ico:'=▀=',cost:150,lvl:4,slot:'head',desc:'A mortarboard with a gold tassel, for a Trailblazer.'}];
   const BADGES=[{id:'first',n:'First trail'},{id:'reroute',n:'Changed my mind'},{id:'good',n:'Good nose'},{id:'tri',n:'Tri-colony'},{id:'zot',n:'Zot!'},{id:'full',n:'Full belly'},{id:'dress',n:'Dressed up'}];
   const QUESTS={r3:{t:'Route 3 prompts',type:'route',goal:3,rw:8},rr1:{t:'Reroute a pick you disagree with',type:'reroute',goal:1,rw:6},
    g1:{t:'Mark a Good route',type:'good',goal:1,rw:5},p1:{t:'Route inside one app (pick Claude, ChatGPT or Gemini first)',type:'plat',goal:1,rw:6},
@@ -19,11 +26,13 @@
    r5:{t:'Route 5 more prompts',type:'route',goal:5,rw:12},o1:{t:'Open a pick in its app',type:'open',goal:1,rw:5},
    x1:{t:'Spend crumbs on a second opinion or on forgetting a trail',type:'spend',goal:1,rw:4}};
   const QORDER=['g1','o1','f3','s1','x1','c1','z1','r5','rr1','p1','r3'];
-  function freshProg(){return{xp:0,crumbs:0,owned:[],worn:{},badges:[],fams:[],routes:0,quests:[{id:'r3',n:0},{id:'rr1',n:0},{id:'p1',n:0}],qdone:0,laps:0}}
+  // econ 2 = the doubled level thresholds. Older saves double their XP once on load, so nobody loses a level.
+  function freshProg(){return{econ:2,xp:0,crumbs:0,owned:[],worn:{},badges:[],fams:[],routes:0,quests:[{id:'r3',n:0},{id:'rr1',n:0},{id:'p1',n:0}],qdone:0,laps:0}}
+  const migrate=v=>{if(!v.econ){v.xp=(+v.xp||0)*2;v.econ=2}return v};
   const lvlIndex=xp=>{let i=0;LEVELS.forEach((l,k)=>{if(xp>=l.xp)i=k});return i};
 
   function createGame(store){
-    const load=()=>{const v=store.get('prog',null);return v&&typeof v==='object'?Object.assign(freshProg(),v):freshProg()};
+    const load=()=>{const v=store.get('prog',null);return v&&typeof v==='object'?Object.assign(freshProg(),migrate(v)):freshProg()};
     let prog=load();
     const ls={};
     const on=(ev,fn)=>{(ls[ev]=ls[ev]||[]).push(fn)};
@@ -70,8 +79,10 @@
     function zotted(){quest('zot');badge('zot')}
     function canBuy(id){const it=SHOP.find(x=>x.id===id);return!!it&&!prog.owned.includes(id)&&lvlIndex(prog.xp)+1>=it.lvl&&prog.crumbs>=it.cost}
     function buy(id){const it=SHOP.find(x=>x.id===id);if(!canBuy(id))return false;
-      prog.crumbs-=it.cost;session.spent+=it.cost;prog.owned.push(id);prog.worn[id]=true;save();quest('gear');badge('dress');return true}
-    function toggleWear(id){if(!prog.owned.includes(id))return false;prog.worn[id]=!prog.worn[id];save();quest('gear');return prog.worn[id]}
+      prog.crumbs-=it.cost;session.spent+=it.cost;prog.owned.push(id);wearOnly(it);save();quest('gear');badge('dress');return true}
+    // Wearing an item takes off anything else in its slot.
+    function wearOnly(it){if(it.slot)SHOP.forEach(o=>{if(o.slot===it.slot&&o.id!==it.id)prog.worn[o.id]=false});prog.worn[it.id]=true}
+    function toggleWear(id){if(!prog.owned.includes(id))return false;if(prog.worn[id])prog.worn[id]=false;else wearOnly(SHOP.find(x=>x.id===id));save();quest('gear');return prog.worn[id]}
     const wearing=id=>!!prog.worn[id];
     function addLap(){prog.laps++;award(5,3)}
     function reset(){prog=freshProg();session=snap();save()}
