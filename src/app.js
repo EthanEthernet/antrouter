@@ -79,6 +79,8 @@
     showTab('route');renderResult();renderTrails();
     loopStep('ask');loopStep('route');if(reduce){loopStep('reveal');loopStep('reward');explainLanding()}
     game.routed(current.chosen.fam,{platform,task:d.task});
+    // Playtest 3: on laptops and in the popup the pick's buttons (Open in, Good route) landed below the fold.
+    $('result').querySelector('.open')?.scrollIntoView({block:'nearest',behavior:reduce?'auto':'smooth'});
   }
   function reroute(id){
     if(!current||current.chosen.id===id||!R.allowedModels(platform).some(m=>m.id===id))return;
