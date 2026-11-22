@@ -96,8 +96,42 @@ function tongueLen(){
   return 0;
 }
 
+// ---- shop scenes: painted behind Mandu, one at a time (game.js keeps them in one slot) ----
+const SCENES=['night','desert','campus'];
+const hash=(r,c)=>{const s=Math.sin(r*12.9898+c*78.233)*43758.5453;return s-Math.floor(s)};
+const BUILDINGS=[[2,12,9],[13,20,14],[21,30,7],[70,78,11],[79,86,17],[87,96,8],[97,103,12]];
+function backdrop(scene,r,c){
+  const gr=ROWS-3,h=hash(r,c),none=[' ',null];
+  if(!scene||r<3||r>=gr-1)return none;   // keep the legend row and the ground clear
+  if(scene==='night'){
+    const d1=Math.hypot((c-42)*0.6,r-6),d2=Math.hypot((c-43.8)*0.6,r-5.4);   // open sky between the tail and the head
+    if(d1<3.2&&d2>2.8)return['@','#F2E6B8'];
+    if(r<=gr-6&&h<0.03)return Math.sin(t*1.7+h*900)>0.55?['*','#C9D6FF']:['.','#56608A'];
+    return none}
+  if(scene==='desert'){
+    if(Math.hypot((c-88)*0.6,r-7)<2.6)return['@','#F5B82E'];
+    const top=gr-1-Math.round(3+1.6*Math.sin(c*0.09)+1.1*Math.sin(c*0.23+1.3));
+    if(c>=8&&c<=13){   // cactus
+      if((c===10||c===11)&&r>=gr-11)return['|','#5FA05A'];
+      if(c===8&&r>=gr-9&&r<=gr-7)return['|','#5FA05A'];if(c===9&&r===gr-7)return['_','#5FA05A'];
+      if(c===13&&r>=gr-10&&r<=gr-8)return['|','#5FA05A'];if(c===12&&r===gr-8)return['_','#5FA05A']}
+    const hill=Math.abs(c-93)*0.6,hr=r-(gr-6);
+    if(hr>=0&&hill<hr*1.1){if(hill>hr*1.1-0.7)return[c<93?'/':'\\','#B07A45'];return h<0.08?['ж','#3A2A1A']:['.','#8A6238']}
+    if(r===top)return['~','#C9925A'];if(r>top)return h<0.25?['.','#8A6238']:none;
+    return none}
+  if(scene==='campus'){
+    for(const [c0,c1,ht] of BUILDINGS){if(c<c0||c>c1)continue;const roof=gr-1-ht;if(r<roof)break;
+      if(r===roof)return['_','#3A5F8F'];if(c===c0||c===c1)return['|','#3A5F8F'];
+      return r%2===0&&c%3===1?(h<0.45?['#','#FFD200']:['.','#24406A']):none}
+    if(c===82&&r>=gr-21&&r<gr-18)return[r===gr-21?'^':'|',r===gr-21?'#FFD200':'#3A5F8F'];
+    if(r<=gr-20&&h<0.006)return['.','#56608A'];
+    return none}
+  return none}
+let lastScene=null;
 function render(){
   const N=ROWS*COLS,grid=new Array(N).fill(' '),col=new Array(N).fill(null);
+  const scene=SCENES.find(id=>wearing(id))||null;
+  if(scene!==lastScene){lastScene=scene;const term=pre.parentElement;if(term)term.dataset.scene=scene||''}
   const running=state==='routing', napping=state==='nap';
   const zotting=state==='zot';
   const bob=zotting?-Math.abs(Math.sin(t*7))*0.07:running?Math.abs(Math.sin(t*12))*-0.035:napping?Math.sin(t*1.3)*0.012:Math.sin(t*2.4)*0.018;
@@ -113,7 +147,7 @@ function render(){
     for(let c=0;c<COLS;c++){
       const u=(c+0.5-COLS/2)*CW;
       let x=u+0.05, y=v-bob;
-      let ch=' ',cc=null,depth=-1;
+      let [ch,cc]=backdrop(scene,r,c),depth=-1;
       const put=(k,col)=>{ch=k;cc=col};
       // tail (pivot at back of body)
       {const px=-0.62,py=0.22;const ca=Math.cos(tailA),sa=Math.sin(tailA);const lx=(x-px)*ca+(y-py)*sa,ly=-(x-px)*sa+(y-py)*ca;
@@ -157,6 +191,13 @@ function render(){
        // gear: party hat
        if(wearing('hat')){const apy=hy-0.5,bsy=hy-0.25,lean=0.35;if(Y>apy&&Y<bsy){const k=(Y-apy)/(bsy-apy),w=k*0.1,cxh=0.42+(bsy-Y)*lean;if(Math.abs(X-cxh)<w)put(Math.floor(k*4)%2?'#':'=',Math.floor(k*4)%2?'#FF6FA3':UGOLD)}
          if(len((X-0.42-(bsy-apy)*lean)/0.03,(Y-apy+0.015)/0.025)<1)put('*',UGOLD)}
+       // gear: graduation cap (mortarboard with a gold tassel)
+       if(wearing('grad')){
+         if(Y>hy-0.345&&Y<hy-0.29&&Math.abs(X-0.42)<0.21)put('=','#A9B0D6');
+         else if(Y>=hy-0.29&&Y<hy-0.21&&Math.abs(X-0.42)<0.13)put('#','#5A6390');
+         if(len((X-0.42)/0.03,(Y-(hy-0.33))/0.025)<1)put('*',UGOLD);
+         const ts=seg(X,Y,0.62,hy-0.31,0.66,hy-0.17);if(ts.d<0.014)put('|',UGOLD);
+         if(len((X-0.66)/0.03,(Y-(hy-0.15))/0.025)<1)put('*',UGOLD)}
        // snout (tapered, slightly downward curve)
        const ax=0.56,ay=hy+0.04,bx=1.02,by=hy+0.2+sniff;const s=seg(X,Y,ax,ay,bx,by);const sr=0.105*(1-s.h)+0.04*s.h;
        if(s.d<sr){const k=s.d/sr;put(shade(0.2+0.5*(1-k*k)),FUR)}

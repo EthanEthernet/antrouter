@@ -103,7 +103,7 @@ test('levels unlock routing features and announce them', () => {
   assert.equal(g.has('closecall'), false);
   assert.equal(ups[0].name, 'Forager');
   assert.match(ups[0].feature, /Score bars/);
-  assert.deepEqual(ups[0].unlocked, ['UCI bandana']);
+  assert.deepEqual(ups[0].unlocked, ['UCI bandana', 'Night sky']);
   const top = G.createGame(memStore({ prog: { xp: 300 } }));
   assert.ok(top.has('closecall') && top.has('dials'));
 });
@@ -152,7 +152,7 @@ test('a completed loop pays a small bonus', () => {
 });
 
 test('the session recap counts only this session', () => {
-  const g = G.createGame(memStore({ prog: { xp: 50, crumbs: 30, badges: ['zot'], laps: 2 } }));
+  const g = G.createGame(memStore({ prog: { econ: 2, xp: 50, crumbs: 30, badges: ['zot'], laps: 2 } }));
   g.startSession(1000);
   g.routed('Claude', { platform: 'any', task: 'code' });
   g.rerouted('GPT', { first: true, from: 'Claude' });
@@ -209,6 +209,57 @@ test('a session left alone for 30 minutes ends, and so does going back to the ti
 
 test('the reroute badge has its own name, not the paid Second opinion button\'s', () => {
   assert.equal(G.BADGES.find(b => b.id === 'reroute').n, 'Changed my mind');
+});
+
+// Playtest 3: Lv4 by route 9 and enough crumbs for the whole shop by route 8, so crumbs stopped mattering.
+// The thresholds doubled, so saves from before the change double their XP once and keep their level.
+test('saves from before the new thresholds keep their level, and are migrated only once', () => {
+  const s = memStore({ prog: { xp: 300, crumbs: 40 } });
+  const g = G.createGame(s);
+  assert.equal(g.levelInfo().name, 'Trailblazer');
+  assert.equal(g.state().xp, 600);
+  assert.equal(g.state().crumbs, 40);
+  g.opened();
+  assert.equal(G.createGame(s).state().xp, g.state().xp, 'an already migrated save is not doubled again');
+  assert.equal(G.createGame(memStore()).state().xp, 0);
+});
+
+test('levels are at 120 / 320 / 600 XP', () => {
+  assert.deepEqual(G.LEVELS.map(l => l.xp), [0, 120, 320, 600]);
+});
+
+test('the economy lasts: a player who decides every loop reaches Lv4 around route 17 and the full shop around route 28', () => {
+  const g = G.createGame(memStore()), fams = ['Claude', 'GPT', 'Gemini'], total = G.SHOP.reduce((a, s) => a + s.cost, 0);
+  let lv4 = 0, all = 0;
+  for (let i = 1; i <= 60 && !(lv4 && all); i++) {
+    g.routed(fams[i % 3], { platform: i % 4 ? 'any' : 'claude', task: i % 5 ? 'chat' : 'code' }); g.ratedGood(); g.opened(); g.addLap();
+    if (!lv4 && g.levelInfo().index === 3) lv4 = i;
+    if (!all && g.state().crumbs >= total) all = i;
+  }
+  assert.ok(lv4 >= 14 && lv4 <= 22, 'Lv4 at route ' + lv4);
+  assert.ok(all >= 24 && all <= 32, 'whole shop affordable at route ' + all + ' (total ' + total + ')');
+});
+
+test('the shop sells scenes and a top-tier outfit, unlocked by level', () => {
+  const ids = G.SHOP.map(s => s.id);
+  for (const id of ['night', 'desert', 'campus', 'grad']) assert.ok(ids.includes(id), id);
+  assert.equal(G.SHOP.find(s => s.id === 'grad').lvl, 4);
+  const lowLevel = G.createGame(memStore({ prog: { crumbs: 500 } }));
+  assert.equal(lowLevel.canBuy('campus'), false);
+});
+
+test('one scene at a time, and the party hat and graduation cap share the head', () => {
+  const g = G.createGame(memStore({ prog: { xp: 600, crumbs: 1000 } }));
+  g.buy('night'); g.buy('desert');
+  assert.equal(g.wearing('desert'), true);
+  assert.equal(g.wearing('night'), false);
+  assert.equal(g.toggleWear('night'), true);
+  assert.equal(g.wearing('desert'), false);
+  g.buy('hat'); g.buy('grad');
+  assert.equal(g.wearing('grad'), true);
+  assert.equal(g.wearing('hat'), false);
+  g.buy('bow');
+  assert.equal(g.wearing('bow') && g.wearing('grad') && g.wearing('night'), true, 'other slots are untouched');
 });
 
 test('reset wipes progress and emits change', () => {
