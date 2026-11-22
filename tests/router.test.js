@@ -90,9 +90,26 @@ test('platform filter only returns that vendor', () => {
   assert.equal(router.allowedModels('any').length, 7);
 });
 
-test('learned bias reorders the ranking but not the reason', () => {
+// Playtest 3: once a trail changed the pick, the card named one model and explained another.
+test('when a learned trail changes the pick, the reason names the final pick and says a trail did it', () => {
   const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', { 'code:medium': { gpt: 0.08, sonnet: -0.04 } });
   assert.equal(ranking(d), 'gpt:84 sonnet:80 opus:77 gpro:70 haiku:64 gflash:64 gptmini:58');
+  assert.equal(d.reason, "You've steered medium code prompts like this to GPT flagship, so Mandu follows that trail.");
+});
+
+test('the reason always names the model on the card, however the trails point', () => {
+  const prompts = ['Fix this off-by-one bug in my Python loop', "What's the capital of Australia?", 'Write a short poem about finals week at UCI', 'Summarize this 20-page article into key points'];
+  for (const platform of ['any', 'claude', 'chatgpt', 'gemini']) for (const text of prompts) for (const m of router.allowedModels(platform)) {
+    const key = router.decide(text, platform, {}).key;
+    const d = router.decide(text, platform, { [key]: { [m.id]: 0.4 } });
+    const named = router.allowedModels('any').filter(x => d.reason.includes(x.name)).map(x => x.id);
+    assert.ok(named.every(id => id === d.order[0].id), `${platform} / ${text} / ${m.id}: card ${d.order[0].name}, reason "${d.reason}"`);
+    if (d.order[0].id !== router.decide(text, platform, {}).order[0].id) assert.match(d.reason, /trail/, d.reason);
+  }
+});
+
+test('a trail that does not change the pick keeps the usual reason', () => {
+  const d = router.decide('Fix this off-by-one bug in my Python loop', 'any', { 'code:medium': { sonnet: 0.03 } });
   assert.equal(d.reason, 'Claude Sonnet is the strongest fit for code at this difficulty.');
 });
 

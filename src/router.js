@@ -50,7 +50,7 @@
     return`${b.name} scored ${d.final[b.id]} to ${a.name}'s ${d.final[a.id]}. `+(forB.length?`It's ${list(forB)}`:'It has no clear edge here')+(forA.length?`, while ${a.name} is ${list(forA)}.`:'.')}
   function allowedModels(platformId){const f=PLATFORMS.find(x=>x.id===platformId).fam;return MODELS.filter(m=>!f||m.fam===f)}
   function rankModels(scores,platformId){return allowedModels(platformId).sort((a,b)=>scores[b.id]-scores[a.id])}
-  // The reason describes the unbiased pick, exactly as the prototype did.
+  // Explains why r fits on its own merits; decide() only calls it when no learned trail changed the pick.
   function explain(c,r,platformId){
     const pl=PLATFORMS.find(x=>x.id===platformId),label=TASKS[c.task].label;
     const fam=pl.fam?MODELS.filter(m=>m.fam===pl.fam):null;
@@ -64,7 +64,9 @@
   }
   // weights (optional) are the player's priority dials: {Q,S,C}.
   function decide(text,platformId,bias,weights){const c=classify(text),scores=scoreModels(c.task,c.complexity,weights),key=trailKey(c.task,c.complexity);
-    const reason=explain(c,rankModels(scores,platformId)[0],platformId),final=applyBias(scores,key,bias),order=rankModels(final,platformId);
+    const base=rankModels(scores,platformId)[0],final=applyBias(scores,key,bias),order=rankModels(final,platformId);
+    // The reason always describes the model on the card; when a learned trail moved the pick, it says so.
+    const reason=order[0].id===base.id?explain(c,base,platformId):`You've steered ${trailLabel(key)} prompts like this to ${order[0].name}, so Mandu follows that trail.`;
     return{task:c.task,alt:c.alt,complexity:c.complexity,key,scores,final,reason,order,confidence:confidence(order,final,c.alt)}}
   function nudge(bias,key,id,a){bias[key]=bias[key]||{};bias[key][id]=Math.max(-0.3,Math.min(0.4,(bias[key][id]||0)+a));return bias}
   // Trails saved before learning was split by difficulty have no ":band" and are dropped once.
